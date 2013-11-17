@@ -5,16 +5,24 @@ import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.syntax.*
+import ru.trylogic.gom.GOM
 import ru.trylogic.gom.Transformer
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.GOMConfig.Mapping
 import ru.trylogic.gom.config.GOMConfig.Mapping.Field
 
-import static groovyjarjarasm.asm.Opcodes.*
+import static groovyjarjarasm.asm.Opcodes.*;
+
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
+
+import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
+import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
+import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
 class MapperProcessor implements CompilationUnitAware {
-    
+
+    public static final String VALUE_OF = "valueOf"
+    public static final String TO_STRING = "toString"
     CompilationUnit compilationUnit;
 
     MapperProcessor(CompilationUnit compilationUnit) {
@@ -26,7 +34,7 @@ class MapperProcessor implements CompilationUnitAware {
 
         classNode.modifiers |= ACC_FINAL;
 
-        Set<InnerClassNode> transformers = config.mappings.collect { processMapping(classNode, it) }
+        Set<InnerClassNode> transformers = config.mappings.collect { processMapping(config, classNode, it) }
         
         transformers.each(classNode.module.&addClass);
 
@@ -37,7 +45,7 @@ class MapperProcessor implements CompilationUnitAware {
         return field.aName + "FromB";
     }
 
-    InnerClassNode processMapping(ClassNode classNode, Mapping mapping) {
+    InnerClassNode processMapping(GOMConfig config, ClassNode classNode, Mapping mapping) {
         int counter = 0;
 
         String className;
@@ -53,6 +61,9 @@ class MapperProcessor implements CompilationUnitAware {
         final InnerClassNode mapperClassNode = new InnerClassNode(classNode, className, ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE);
         mapperClassNode.anonymous = true;
 
+
+        mapperClassNode.addProperty("gom", ACC_PUBLIC, ClassHelper.makeWithoutCaching(GOM), null, null, null);
+
         ClassNode aClassNode = ClassHelper.makeWithoutCaching(mapping.a);
         ClassNode bClassNode = ClassHelper.makeWithoutCaching(mapping.b);
         
@@ -64,7 +75,18 @@ class MapperProcessor implements CompilationUnitAware {
         mapperClassNode.addMethod(generateTypeGetter("getSourceType", aClassNode));
         mapperClassNode.addMethod(generateTypeGetter("getTargetType", bClassNode));
 
-        mapperClassNode.addMethod(generateToAMethod(mapperClassNode, mapping, aClassNode, bClassNode));
+
+        MethodNode toAMethod;
+        
+        if(mapping.toA != null) {
+            def closure = new ClosureCompiler(compilationUnit).compile(mapping.toA);
+
+            toAMethod = new MethodNode("toA", ACC_PUBLIC, aClassNode, closure.parameters, null, closure.code);
+        } else {
+            toAMethod = generateToAMethod(config, mapperClassNode, mapping, aClassNode, bClassNode);
+        }
+        
+        mapperClassNode.addMethod(toAMethod);
         
         return mapperClassNode;
     }
@@ -74,22 +96,21 @@ class MapperProcessor implements CompilationUnitAware {
         nodeClass.usingGenerics = true;
         nodeClass.genericsTypes = [new GenericsType(node)];
 
-        return new MethodNode(name, ACC_PUBLIC, nodeClass, Parameter.EMPTY_ARRAY, null, new ReturnStatement(new ClassExpression(node)));
+        return new MethodNode(name, ACC_PUBLIC, nodeClass, EMPTY_ARRAY, null, new ReturnStatement(new ClassExpression(node)));
     }
 
     MethodNode generateBuildMethod(Set<InnerClassNode> transformers) {
         def resultClassNode = ClassHelper.makeWithoutCaching(HashSet, false);
 
         def methodBody = new BlockStatement();
-        def methodNode = new MethodNode("getMappers", ACC_PUBLIC, ClassHelper.makeWithoutCaching(Collection, false), Parameter.EMPTY_ARRAY, null, methodBody)
+        def methodNode = new MethodNode("getMappers", ACC_PUBLIC, ClassHelper.makeWithoutCaching(Collection, false), EMPTY_ARRAY, null, methodBody)
         def resultVariable = new VariableExpression("result", resultClassNode)
-        def assignToken = new Token(Types.ASSIGNMENT_OPERATOR, "=", -1, -1)
 
-        methodBody.statements << new ExpressionStatement(new DeclarationExpression(resultVariable, assignToken, new ConstructorCallExpression(resultClassNode, new ArgumentListExpression())))
+        methodBody.statements << declStatement(resultVariable, new ConstructorCallExpression(resultClassNode, EMPTY_ARGUMENTS))
 
         transformers.each {
             it.enclosingMethod = methodNode;
-            methodBody.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", new ConstructorCallExpression(it, new ArgumentListExpression())));
+            methodBody.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", new ConstructorCallExpression(it, EMPTY_ARGUMENTS)));
         }
 
         methodBody.statements << new ReturnStatement(resultVariable);
@@ -97,26 +118,27 @@ class MapperProcessor implements CompilationUnitAware {
         return methodNode
     }
 
-    MethodNode generateToAMethod(InnerClassNode mapperClassNode, Mapping mapping, ClassNode aClassNode, ClassNode bClassNode) {
+    MethodNode generateToAMethod(GOMConfig config, InnerClassNode mapperClassNode, Mapping mapping, ClassNode aClassNode, ClassNode bClassNode) {
         def methodBody = new BlockStatement();
 
-        def assignToken = new Token(Types.ASSIGNMENT_OPERATOR, "=", -1, -1)
         def resultVariable = new VariableExpression("result", aClassNode)
         def bParameter = new Parameter(bClassNode, "b")
-        methodBody.statements << new ExpressionStatement(new DeclarationExpression(resultVariable, assignToken, new ConstructorCallExpression(aClassNode, ArgumentListExpression.EMPTY_ARGUMENTS)))
+        methodBody.statements << declStatement(resultVariable, new ConstructorCallExpression(aClassNode, EMPTY_ARGUMENTS));
 
         aClassNode.fields.each { aField ->
             if((aField.modifiers & ACC_SYNTHETIC) ) {
                 return;
             }
-            
-            Expression value = generateFieldAssign(mapperClassNode, aClassNode, bClassNode, mapping, aField, bParameter);
-            
+
+            Expression value = generateFieldAssign(config, mapping, mapperClassNode, aClassNode, bClassNode, aField, bParameter);
+
             if(value == null) {
                 return;
             }
 
-            methodBody.statements << assign(resultVariable, aField.name, value);
+
+            def propertyExpression = new PropertyExpression(resultVariable, aField.name)
+            methodBody.statements << assignStatement(propertyExpression, value);
         }
 
         methodBody.statements << new ReturnStatement(resultVariable)
@@ -124,13 +146,8 @@ class MapperProcessor implements CompilationUnitAware {
         return new MethodNode("toA", ACC_PUBLIC, aClassNode, [bParameter] as Parameter[], null, methodBody)
     }
     
-    Statement assign(VariableExpression object, String fieldName, Expression value) {
-        def propertyExpression = new PropertyExpression(object, fieldName)
-        def binaryExpression = new BinaryExpression(propertyExpression, new Token(Types.EQUAL, "=", -1, -1), value)
-        return new ExpressionStatement(binaryExpression)
-    }
     
-    Expression generateFieldAssign(InnerClassNode mapperClassNode, ClassNode aClassNode, ClassNode bClassNode, Mapping mapping, FieldNode aField, Parameter bParameter) {
+    Expression generateFieldAssign(GOMConfig config, Mapping mapping, InnerClassNode mapperClassNode, ClassNode aClassNode, ClassNode bClassNode, FieldNode aField, Parameter bParameter) {
         Field fieldConfig = mapping.fields?.find { it.aName == aField.name }
         if(fieldConfig?.a != null) {
             def closure = new ClosureCompiler(compilationUnit).compile(fieldConfig.a);
@@ -138,7 +155,7 @@ class MapperProcessor implements CompilationUnitAware {
             def methodName = getAFieldConverterName(fieldConfig)
             mapperClassNode.addMethod(methodName, ACC_PUBLIC, aField.type, closure.parameters, null, closure.code);
 
-            return new MethodCallExpression(VariableExpression.THIS_EXPRESSION, methodName, new ArgumentListExpression(bParameter));
+            return new MethodCallExpression(THIS_EXPRESSION, methodName, new ArgumentListExpression(bParameter));
         }
 
         FieldNode bField = bClassNode.getField(fieldConfig?.bName ?: aField.name);
@@ -149,42 +166,58 @@ class MapperProcessor implements CompilationUnitAware {
         
         def bFieldValue = new PropertyExpression(new VariableExpression(bParameter), bField.name)
 
-        def value = generateFieldValue(aField.type, bField.type, bFieldValue)
+        def value = generateFieldValue(config, aField.type, bField.type, bFieldValue)
         
         if(value == null) {
             return null;
         }
 
-        def notNull = new BooleanExpression(new BinaryExpression(bFieldValue, Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1), ConstantExpression.NULL));
-        
-        return new TernaryExpression(notNull, value, ConstantExpression.NULL);
+        return new TernaryExpression(notNullExpr(bFieldValue), value, ConstantExpression.NULL);
     }
     
-    Expression generateFieldValue(ClassNode aFieldType, ClassNode bFieldType, PropertyExpression bFieldValue) {
+    Expression generateFieldValue(GOMConfig config, ClassNode aFieldType, ClassNode bFieldType, PropertyExpression bFieldValue) {
         if(aFieldType.isDerivedFrom(bFieldType)) {
             return bFieldValue;
         }
 
         def unwrappedAFieldType = ClassHelper.getUnwrapper(aFieldType)
+        
+        if(config.mappings.any { it.a.name.equalsIgnoreCase(aFieldType.name) && it.b.name.equalsIgnoreCase(bFieldType.name)}) {
+            return generateKnownMappingFieldValue(aFieldType, bFieldType, bFieldValue)
+        }
 
         switch(unwrappedAFieldType) {
             case {it.enum}:
                 return generateEnumFieldValue(aFieldType, bFieldType, bFieldValue);
             case {ClassHelper.isPrimitiveType(it)}:
-                return new StaticMethodCallExpression(ClassHelper.getWrapper(aFieldType), "valueOf", new ArgumentListExpression(bFieldValue));
+                return generatePrimitiveFieldValue(aFieldType, bFieldValue);
             case ClassHelper.STRING_TYPE:
-                return new MethodCallExpression(bFieldValue, "toString", ArgumentListExpression.EMPTY_ARGUMENTS);
+                return generateStringFieldValue(bFieldValue);
         }
 
         //TODO warn about no mapping
         return bFieldValue;
     }
     
+    Expression generateKnownMappingFieldValue(ClassNode aFieldType, ClassNode bFieldType, PropertyExpression bFieldValue) {
+        def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, "gom"), "getTransformer", new ArgumentListExpression(new ClassExpression(aFieldType), new ClassExpression(bFieldType)));
+    
+        return new MethodCallExpression(mapper, "toA", new ArgumentListExpression(bFieldValue));
+    }
+
+    Expression generateStringFieldValue(PropertyExpression bFieldValue) {
+        new MethodCallExpression(bFieldValue, TO_STRING, EMPTY_ARGUMENTS)
+    }
+
+    Expression generatePrimitiveFieldValue(ClassNode aFieldType, PropertyExpression bFieldValue) {
+        new StaticMethodCallExpression(ClassHelper.getWrapper(aFieldType), VALUE_OF, new ArgumentListExpression(bFieldValue))
+    }
+
     Expression generateEnumFieldValue(ClassNode aFieldType, ClassNode bFieldType, PropertyExpression bFieldValue) {
         Expression enumKey = null;
         switch(bFieldType) {
             case {it.enum}:
-                enumKey = new MethodCallExpression(bFieldValue, "name", ArgumentListExpression.EMPTY_ARGUMENTS);
+                enumKey = new MethodCallExpression(bFieldValue, "name", EMPTY_ARGUMENTS);
                 break;
             case ClassHelper.STRING_TYPE:
                 enumKey = bFieldValue;
@@ -193,7 +226,7 @@ class MapperProcessor implements CompilationUnitAware {
         if(enumKey == null) {
             return null;
         }
-        return new StaticMethodCallExpression(aFieldType, "valueOf", new ArgumentListExpression(new ClassExpression(aFieldType), enumKey));
+        return new StaticMethodCallExpression(aFieldType, VALUE_OF, new ArgumentListExpression(new ClassExpression(aFieldType), enumKey));
     }
     
 }

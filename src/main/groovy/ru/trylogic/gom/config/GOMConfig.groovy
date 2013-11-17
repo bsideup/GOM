@@ -18,6 +18,9 @@ class GOMConfig {
         Class a
         Class b
         
+        String toA;
+        String toB;
+        
         Set<Field> fields = new HashSet<>();
     }
     

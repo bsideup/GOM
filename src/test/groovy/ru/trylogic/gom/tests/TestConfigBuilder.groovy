@@ -26,17 +26,6 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
             
         mapping(Person, PersonDTO) {
             field ("phone", "aPhone")
-            
-            field ("address") {
-                a { PersonDTO b ->
-                    AddressDTO address = b?.address
-                    new Address(street: address?.streetParts?.join(STREET_PARTS_GLUE), zipCode: address?.zipCode?.toString())
-                }
-                b { Person a ->
-                    Address address = a?.address
-                    new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: Integer.valueOf(address?.zipCode))
-                }
-            }
         }
     ]
 }

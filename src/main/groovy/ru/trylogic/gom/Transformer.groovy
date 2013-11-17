@@ -1,12 +1,17 @@
 package ru.trylogic.gom
 
-interface Transformer<SOURCE, TARGET> {
+interface Transformer<A_TYPE, B_TYPE> {
     
-    Class<? extends SOURCE> getSourceType();
+    Class<? extends A_TYPE> getSourceType();
     
-    Class<? extends TARGET> getTargetType();
+    Class<? extends B_TYPE> getTargetType();
 
-    SOURCE toA(TARGET b);
+    A_TYPE toA(B_TYPE b);
     
     //TARGET toB(SOURCE a);
+    
+    
+    GOM getGom();
+    
+    void setGom(GOM value);
 }

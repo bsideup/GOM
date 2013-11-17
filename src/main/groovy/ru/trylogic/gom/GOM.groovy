@@ -14,6 +14,12 @@ class GOM {
             
             transformers.get(it.sourceType).put(it.targetType, it);
         }
+
+        transformers.values().each {
+            it.values().each {
+                it.gom = this;
+            }
+        }
     }
 
     Transformer getTransformer(Class<?> classA, Class<?> classB) {

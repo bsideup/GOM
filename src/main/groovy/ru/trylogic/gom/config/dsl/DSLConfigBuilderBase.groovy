@@ -31,11 +31,11 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
         }
         
         def toA(cl) {
-            
+            result.toA = cl;
         }
         
         def toB(cl) {
-            
+            result.toB = cl;
         }
 
         def field(String aName, String bName) {
