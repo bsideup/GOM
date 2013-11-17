@@ -8,9 +8,18 @@ class Person {
         String street;
     }
     
+    static enum Sex {
+        MALE,
+        FEMALE
+    }
+    
     String name;
     
     String phone;
+    
+    String age;
+    
+    Sex sex;
     
     Address address;
 }

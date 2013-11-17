@@ -52,23 +52,28 @@ class DSLExecutor implements CompilationUnitAware {
                 @Override
                 void visitMethodCallExpression(MethodCallExpression call) {
                     super.visitMethodCallExpression(call)
-                    if(!call.methodAsString.equalsIgnoreCase("a") && !call.methodAsString.equalsIgnoreCase("b") ) {
-                        return;
+                    switch(call.methodAsString) {
+                        case "a":
+                        case "b":
+                        case "toA":
+                        case "toB":
+                            def argumentsExpressions = (call.arguments as ArgumentListExpression)?.expressions
+
+                            ClosureExpression cl = argumentsExpressions.get(0) as ClosureExpression;
+
+                            if(cl == null) {
+                                break;
+                            }
+
+                            StringWriter writer = new StringWriter()
+                            new AstNodeToScriptVisitor(writer).visitClosureExpression(cl);
+
+                            argumentsExpressions.clear();
+                            argumentsExpressions.add(new ConstantExpression(writer.toString()));
+                            break;
+                        default:
+                            return;
                     }
-
-                    def argumentsExpressions = (call.arguments as ArgumentListExpression)?.expressions
-
-                    ClosureExpression cl = argumentsExpressions.get(0) as ClosureExpression;
-
-                    if(cl == null) {
-                        return;
-                    }
-
-                    StringWriter writer = new StringWriter()
-                    new AstNodeToScriptVisitor(writer).visitClosureExpression(cl);
-
-                    argumentsExpressions.clear();
-                    argumentsExpressions.add(new ConstantExpression(writer.toString()));
                 }
             })
 

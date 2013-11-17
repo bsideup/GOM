@@ -29,6 +29,14 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
                 result.b = cl;
             }
         }
+        
+        def toA(cl) {
+            
+        }
+        
+        def toB(cl) {
+            
+        }
 
         def field(String aName, String bName) {
             field(aName, bName, null);
@@ -50,7 +58,11 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
     GOMConfig build() {
         return result;
     }
-    
+
+    def mapping(Class a, Class b) {
+        mapping(a, b, null);
+    }
+
     def mapping(Class a, Class b, @DelegatesTo(GOMMappingBuilder) Closure spec) {
         result.mappings << new GOMMappingBuilder(a, b, spec).build();
     }

@@ -21,16 +21,18 @@ class SimpleTest extends Specification {
 
     def "basic test"(){
         
-        Person a = mapper.toA(new PersonDTO(name: name, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode)))
+        Person a = mapper.toA(new PersonDTO(name: name, sex: PersonDTO.SexDTO.valueOf(PersonDTO.SexDTO, sex.name()), age: age.toInteger(), aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode)))
 
         expect:
         a.phone == phone
+        a.age == age
+        a.sex == sex
         a.name == name
         a.address?.zipCode == zipCode.toString()
         a.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
         
         where:
-        name    | phone | streetParts               | zipCode
-        "John"  | "911" | ["Katusepapi", "23/25"]   | 100500
+        name    | age   | sex               | phone | streetParts               | zipCode
+        "John"  | "18"  | Person.Sex.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500
     }
 }
