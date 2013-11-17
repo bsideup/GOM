@@ -1,6 +1,7 @@
 package ru.trylogic.gom.config.dsl
 
 import groovy.transform.CompilationUnitAware
+import groovyjarjarasm.asm.Opcodes
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
@@ -11,18 +12,18 @@ import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.GOMConfig.Mapping
 import ru.trylogic.gom.config.GOMConfig.Mapping.Field
 
-import static groovyjarjarasm.asm.Opcodes.*;
-
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
-class MapperProcessor implements CompilationUnitAware {
+class MapperProcessor implements CompilationUnitAware, Opcodes {
 
     public static final String VALUE_OF = "valueOf"
     public static final String TO_STRING = "toString"
+    public static final String TO_A_METHOD_NAME = "toA"
+    
     CompilationUnit compilationUnit;
 
     MapperProcessor(CompilationUnit compilationUnit) {
@@ -81,7 +82,7 @@ class MapperProcessor implements CompilationUnitAware {
         if(mapping.toA != null) {
             def closure = new ClosureCompiler(compilationUnit).compile(mapping.toA);
 
-            toAMethod = new MethodNode("toA", ACC_PUBLIC, aClassNode, closure.parameters, null, closure.code);
+            toAMethod = new MethodNode(TO_A_METHOD_NAME, ACC_PUBLIC, aClassNode, closure.parameters, null, closure.code);
         } else {
             toAMethod = generateToAMethod(config, mapperClassNode, mapping, aClassNode, bClassNode);
         }
@@ -143,7 +144,7 @@ class MapperProcessor implements CompilationUnitAware {
 
         methodBody.statements << new ReturnStatement(resultVariable)
 
-        return new MethodNode("toA", ACC_PUBLIC, aClassNode, [bParameter] as Parameter[], null, methodBody)
+        return new MethodNode(TO_A_METHOD_NAME, ACC_PUBLIC, aClassNode, [bParameter] as Parameter[], null, methodBody)
     }
     
     
@@ -200,9 +201,10 @@ class MapperProcessor implements CompilationUnitAware {
     }
     
     Expression generateKnownMappingFieldValue(ClassNode aFieldType, ClassNode bFieldType, PropertyExpression bFieldValue) {
+        //TODO caching
         def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, "gom"), "getTransformer", new ArgumentListExpression(new ClassExpression(aFieldType), new ClassExpression(bFieldType)));
     
-        return new MethodCallExpression(mapper, "toA", new ArgumentListExpression(bFieldValue));
+        return new MethodCallExpression(mapper, TO_A_METHOD_NAME, new ArgumentListExpression(bFieldValue));
     }
 
     Expression generateStringFieldValue(PropertyExpression bFieldValue) {
