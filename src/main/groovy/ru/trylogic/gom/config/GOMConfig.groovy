@@ -24,7 +24,5 @@ class GOMConfig {
         Set<Field> fields = new HashSet<>();
     }
     
-    boolean mapDynamic
-    
     Set<Mapping> mappings = new HashSet<>();
 }

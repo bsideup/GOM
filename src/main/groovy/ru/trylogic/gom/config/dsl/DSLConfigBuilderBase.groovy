@@ -71,7 +71,12 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
     }
 
     def mapping(Class a, Class b, @DelegatesTo(GOMMappingBuilder) Closure spec) {
-        result.mappings << new GOMMappingBuilder(a, b, spec).build();
+        def mapping = new GOMMappingBuilder(a, b, spec).build()
+        result.mappings << mapping;
+        
+        result.mappings << new GOMConfig.Mapping(a : mapping.b, b : mapping.a, toA : mapping.toB, toB : mapping.toA, fields: mapping.fields.collect {
+            new GOMConfig.Mapping.Field(aName: it.bName, bName: it.aName, a : it.b, b : it.a)
+        })
     }
     
 }

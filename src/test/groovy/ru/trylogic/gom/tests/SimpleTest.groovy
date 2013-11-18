@@ -41,16 +41,15 @@ class SimpleTest extends Specification {
 
     def "test to b"(){
 
-        println mapper
-        PersonDTO b = mapper.toB(new Person(name: name, sex: sex, age: age, phone: phone))//, address: new Address(street: street, zipCode: zipCode)))
+        PersonDTO b = mapper.toB(new Person(name: name, sex: sex, age: age, phone: phone, address: new Address(street: street, zipCode: zipCode)))
 
         expect:
         b.aPhone == phone
         b.age == age.toInteger()
         b.sex == SexDTO.valueOf(SexDTO, sex.name())
         b.name == name
-        //b.address?.zipCode == zipCode.toInteger()
-        //b.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
+        b.address?.zipCode == zipCode.toInteger()
+        b.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
 
         where:
         name   | age  | sex      | phone | street             | zipCode

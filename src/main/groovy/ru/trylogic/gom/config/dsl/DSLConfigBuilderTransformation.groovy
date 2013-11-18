@@ -1,6 +1,7 @@
 package ru.trylogic.gom.config.dsl
 
 import groovy.inspect.swingui.AstNodeToScriptVisitor
+import groovy.json.JsonBuilder
 import groovy.transform.CompilationUnitAware
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*

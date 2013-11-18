@@ -23,9 +23,10 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     public static final String VALUE_OF = "valueOf"
     public static final String TO_STRING = "toString"
     public static final String GOM_FIELD_NAME = "gom"
+    public static final String TO_A_METHOD_NAME = "toA"
 
     static enum Direction {
-        A("toA"),
+        A(TO_A_METHOD_NAME),
         B("toB")
         
         String toMethodName;
@@ -198,7 +199,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         def unwrappedAFieldType = ClassHelper.getUnwrapper(targetFieldType)
         
         if(config.mappings.any { direction.getTargetClassName(it).equalsIgnoreCase(targetFieldType.name) && direction.getSourceClassName(it).equalsIgnoreCase(sourceFieldType.name)}) {
-            return generateKnownMappingFieldValue(direction, targetFieldType, sourceFieldType, sourceFieldValue)
+            return generateKnownMappingFieldValue(targetFieldType, sourceFieldType, sourceFieldValue)
         }
 
         switch(unwrappedAFieldType) {
@@ -214,11 +215,15 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return sourceFieldValue;
     }
     
-    Expression generateKnownMappingFieldValue(Direction direction, ClassNode targetFieldType, ClassNode sourceFieldType, PropertyExpression bFieldValue) {
+    Expression generateKnownMappingFieldValue(ClassNode targetFieldType, ClassNode sourceFieldType, PropertyExpression bFieldValue) {
         //TODO caching
-        def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, GOM_FIELD_NAME), "getTransformer", new ArgumentListExpression(new ClassExpression(targetFieldType), new ClassExpression(sourceFieldType)));
+
+        def targetClassExpression = new ClassExpression(targetFieldType)
+        def sourceClassExpression = new ClassExpression(sourceFieldType)
+
+        def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, GOM_FIELD_NAME), "getTransformer", new ArgumentListExpression(targetClassExpression, sourceClassExpression));
     
-        return new MethodCallExpression(mapper, direction.toMethodName, new ArgumentListExpression(bFieldValue));
+        return new MethodCallExpression(mapper, TO_A_METHOD_NAME, new ArgumentListExpression(bFieldValue));
     }
 
     Expression generateStringFieldValue(PropertyExpression sourceFieldValue) {
