@@ -7,8 +7,8 @@ interface Transformer<A_TYPE, B_TYPE> {
     Class<? extends B_TYPE> getTargetType();
 
     A_TYPE toA(B_TYPE b);
-    
-    //TARGET toB(SOURCE a);
+
+    B_TYPE toB(A_TYPE a);
     
     
     GOM getGom();

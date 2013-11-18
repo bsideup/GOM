@@ -30,12 +30,20 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
             }
         }
         
+        private void check() {
+            if((result.fields != null && !result.fields.empty) && (result.toA != null || result.toB != null)) {
+                throw new Exception("You can't use both of fields and toA or toB");
+            }
+        }
+        
         def toA(cl) {
             result.toA = cl;
+            check();
         }
         
         def toB(cl) {
             result.toB = cl;
+            check();
         }
 
         def field(String aName, String bName) {
@@ -48,10 +56,9 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
 
         def field(String aName, String bName, @DelegatesTo(GOMFieldBuiler) Closure spec) {
             result.fields << new GOMFieldBuiler(aName, bName, spec).build();
+            check();
         }
     }
-    
-    boolean mapDynamic = false;
     
     abstract def getMappers();
     

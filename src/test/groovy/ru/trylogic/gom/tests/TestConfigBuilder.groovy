@@ -11,7 +11,6 @@ import ru.trylogic.gom.tests.data.PersonDTO.AddressDTO
 class TestConfigBuilder extends DSLConfigBuilderBase {
 
     public static final String STREET_PARTS_GLUE = " "
-    boolean mapDynamic = true
     
     def mappers = [
         mapping(Address, AddressDTO) {
