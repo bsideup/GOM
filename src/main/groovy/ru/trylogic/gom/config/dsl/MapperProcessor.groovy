@@ -35,77 +35,39 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         }
 
         String getFieldConverterName(Field field) {
-            switch(this) {
-                case A:
-                    return field.aName + "From" + this.name();
-                case B:
-                    return field.bName + "From" + this.name();
-                default:
-                    throw new Exception("unreachable");
-            }
+            return ab(field.aName, field.bName)  + "From" + this.name();
         }
         
         String getFieldConverterCode(Field field) {
-            switch(this) {
-                case A:
-                    return field?.a
-                case B:
-                    return field?.b
-                default:
-                    throw new Exception("unreachable");
-            }
+            return ab(field?.a, field?.b);
         }
         
         String toMethodCode(Mapping mapping) {
-            switch(this) {
-                case A:
-                    return mapping.toA;
-                case B:
-                    return mapping.toB;
-                default:
-                    throw new Exception("unreachable");
-            }
+            return ab(mapping.toA, mapping.toB);
         }
 
         String getTargetFieldName(Field field) {
-            switch(this) {
-                case A:
-                    return field?.bName;
-                case B:
-                    return field?.aName;
-                default:
-                    throw new Exception("unreachable");
-            }
+            return ab(field?.bName, field?.aName);
         }
 
         String getSourceFieldName(Field field) {
-            switch(this) {
-                case A:
-                    return field?.aName;
-                case B:
-                    return field?.bName;
-                default:
-                    throw new Exception("unreachable");
-            }
+            return ab(field?.aName, field?.bName);
         }
         
         String getTargetClassName(Mapping mapping) {
-            switch(this) {
-                case A:
-                    return mapping?.a?.name
-                case B:
-                    return mapping?.b?.name
-                default:
-                    throw new Exception("unreachable");
-            }
+            return ab(mapping?.a?.name, mapping?.b?.name)
         }
         
         String getSourceClassName(Mapping mapping) {
+            return ab(mapping?.b?.name, mapping?.a?.name)
+        }
+        
+        def <T> T ab(T a, T b) {
             switch(this) {
                 case A:
-                    return mapping?.b?.name
+                    return a;
                 case B:
-                    return mapping?.a?.name
+                    return b;
                 default:
                     throw new Exception("unreachable");
             }
