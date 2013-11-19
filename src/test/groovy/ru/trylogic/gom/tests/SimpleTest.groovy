@@ -24,7 +24,7 @@ class SimpleTest extends Specification {
 
     def "test to a"(){
 
-        Person a = mapper.toA(new PersonDTO(name: name, sex: sex, age: age, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode)))
+        Person a = mapper.toA(new PersonDTO(name: name, sex: sex, age: age, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode), friends: friends))
 
         expect:
         a.phone == phone
@@ -33,15 +33,19 @@ class SimpleTest extends Specification {
         a.name == name
         a.address?.zipCode == zipCode.toString()
         a.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
+        
+        a.friends != null
+        a.friends.size() == 1
+        a.friends.any {it.name == friends.first().name}
 
         where:
-        name    | age | sex           | phone | streetParts               | zipCode
-        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500
+        name    | age | sex           | phone | streetParts               | zipCode | friends
+        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack")]
     }
 
     def "test to b"(){
 
-        PersonDTO b = mapper.toB(new Person(name: name, sex: sex, age: age, phone: phone, address: new Address(street: street, zipCode: zipCode)))
+        PersonDTO b = mapper.toB(new Person(name: name, sex: sex, age: age, phone: phone, address: new Address(street: street, zipCode: zipCode), friends : friends))
 
         expect:
         b.aPhone == phone
@@ -50,9 +54,13 @@ class SimpleTest extends Specification {
         b.name == name
         b.address?.zipCode == zipCode.toInteger()
         b.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
+        
+        b.friends != null
+        b.friends.size() == 1
+        b.friends.any {it.name == friends.first().name}
 
         where:
-        name   | age  | sex      | phone | street             | zipCode
-        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"
+        name   | age  | sex      | phone | street             | zipCode     | friends
+        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack")]
     }
 }

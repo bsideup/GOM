@@ -22,5 +22,7 @@ class Person {
     Sex sex;
     
     Address address;
+    
+    List<Person> friends;
 }
 

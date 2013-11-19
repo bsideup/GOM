@@ -9,17 +9,19 @@ class PersonDTO {
     
     static class AddressDTO {
         List<String> streetParts
-        
-        int zipCode
+
+        Integer zipCode
     }
     
     String name;
 
     String aPhone;
     
-    int age;
+    Integer age;
 
     SexDTO sex;
     
     AddressDTO address;
+    
+    List<PersonDTO> friends;
 }
