@@ -204,7 +204,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         def sourceFieldType = sourceFieldValue.type;
-        if(is(targetFieldType, ClassHelper.LIST_TYPE)) {
+        if(is(targetFieldType, ClassHelper.LIST_TYPE) || is(targetFieldType, ClassHelper.makeWithoutCaching(Set, false))) {
             if(!is(sourceFieldType, ClassHelper.makeWithoutCaching(Iterable, false))) {
                 return null;
             }
@@ -216,7 +216,16 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         }
         
         if(targetFieldType.isDerivedFrom(sourceFieldType)) {
-            return sourceFieldValue;
+            boolean genericTypesMatch = true;
+
+            def targetFieldGenericTypes = targetFieldType.genericsTypes
+            def sourceFieldGenericTypes = sourceFieldType.genericsTypes
+            for(int i = 0; i < targetFieldGenericTypes?.size(); i++) {
+                genericTypesMatch &= targetFieldGenericTypes[i].type == sourceFieldGenericTypes[i].type;
+            }
+            if(genericTypesMatch) {
+                return sourceFieldValue
+            }
         }
 
         if(config.mappings.any { it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldType.name)}) {
