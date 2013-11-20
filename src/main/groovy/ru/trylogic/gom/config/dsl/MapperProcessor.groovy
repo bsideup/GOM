@@ -11,6 +11,13 @@ import ru.trylogic.gom.Transformer
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.GOMConfig.Mapping
 import ru.trylogic.gom.config.GOMConfig.Mapping.Field
+import ru.trylogic.gom.config.dsl.converters.CollectionConverter
+import ru.trylogic.gom.config.dsl.converters.Converter
+import ru.trylogic.gom.config.dsl.converters.DerivedMatchConverter
+import ru.trylogic.gom.config.dsl.converters.EnumConverter
+import ru.trylogic.gom.config.dsl.converters.KnownMappingConverter
+import ru.trylogic.gom.config.dsl.converters.PrimitiveConverter
+import ru.trylogic.gom.config.dsl.converters.StringConverter
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -79,9 +86,20 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     GOMConfig config;
 
+    List<Converter> converters = [
+        new KnownMappingConverter(),
+        new DerivedMatchConverter(),
+        new CollectionConverter(),
+        new EnumConverter(),
+        new PrimitiveConverter(),
+        new StringConverter()
+    ]
+
     MapperProcessor(CompilationUnit compilationUnit, GOMConfig config) {
         this.compilationUnit = compilationUnit
         this.config = config
+
+        converters*.init(compilationUnit, config, this);
     }
 
     Set<InnerClassNode> process(ClassNode classNode) {
@@ -198,125 +216,10 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return new TernaryExpression(notNullExpr(sourceFieldValue), value, ConstantExpression.NULL);
     }
     
-    static boolean is(ClassNode type, ClassNode to) {
-        return type.isDerivedFrom(to) || type.implementsInterface(to);
-    }
-    
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
-        def sourceFieldType = sourceFieldValue.type;
-        if(is(targetFieldType, ClassHelper.LIST_TYPE) || is(targetFieldType, ClassHelper.makeWithoutCaching(Set, false))) {
-            if(!is(sourceFieldType, ClassHelper.makeWithoutCaching(Iterable, false))) {
-                return null;
-            }
-            if(sourceFieldType.genericsTypes == null || sourceFieldType.genericsTypes.size() != 1) {
-                return null;
-            }
-            
-            return generateCollectionFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
-        }
         
-        if(targetFieldType.isDerivedFrom(sourceFieldType)) {
-            boolean genericTypesMatch = true;
-
-            def targetFieldGenericTypes = targetFieldType.genericsTypes
-            def sourceFieldGenericTypes = sourceFieldType.genericsTypes
-            for(int i = 0; i < targetFieldGenericTypes?.size(); i++) {
-                genericTypesMatch &= targetFieldGenericTypes[i].type == sourceFieldGenericTypes[i].type;
-            }
-            if(genericTypesMatch) {
-                return sourceFieldValue
-            }
-        }
-
-        if(config.mappings.any { it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldType.name)}) {
-            return generateKnownMappingFieldValue(targetFieldType, sourceFieldValue)
-        }
-
-        def unwrappedAFieldType = ClassHelper.getUnwrapper(targetFieldType)
-
-        switch(unwrappedAFieldType) {
-            case {it.enum}:
-                return generateEnumFieldValue(targetFieldType, sourceFieldValue);
-            case {ClassHelper.isPrimitiveType(it)}:
-                return generatePrimitiveFieldValue(targetFieldType, sourceFieldValue);
-            case ClassHelper.STRING_TYPE:
-                return generateStringFieldValue(sourceFieldValue);
-        }
 
         //TODO warn about no mapping
-        return null;
+        return converters.find {it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
     }
-    
-    Expression generateCollectionFieldValue(InnerClassNode mapperClassNode, ClassNode targetListType, Expression sourceFieldValue) {
-        ClassNode resultVariableType;
-        switch(targetListType) {
-            case ClassHelper.LIST_TYPE:
-                resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
-                break;
-            case ClassHelper.makeWithoutCaching(Set, false):
-                resultVariableType = ClassHelper.makeWithoutCaching(HashSet, false);
-                break;
-            default:
-                resultVariableType = targetListType;
-        }
-
-        resultVariableType.usingGenerics = true;
-        resultVariableType.genericsTypes = targetListType.genericsTypes
-
-        def resultVariable = new VariableExpression('$result', resultVariableType)
-
-        Parameter sourceParameter = new Parameter(sourceFieldValue.type, '$source')
-        
-        def methodCode = new BlockStatement();
-        methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
-        
-        def loopBlock = new BlockStatement();
-
-        def iParameter = new Parameter(sourceParameter.type.genericsTypes.first().type, '$item');
-        
-        def value = generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes.first().type, new VariableExpression(iParameter))
-        
-        loopBlock.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value));
-        methodCode.statements << new ForStatement(iParameter, new VariableExpression(sourceParameter), loopBlock);
-        methodCode.statements << new ReturnStatement(resultVariable);
-        
-        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);
-        return new MethodCallExpression(THIS_EXPRESSION, method.name, sourceFieldValue);
-    }
-    
-    Expression generateKnownMappingFieldValue(ClassNode targetFieldType, Expression sourceFieldValue) {
-        //TODO caching
-
-        def targetClassExpression = new ClassExpression(targetFieldType)
-        def sourceClassExpression = new ClassExpression(sourceFieldValue.type)
-
-        def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, GOM_FIELD_NAME), "getTransformer", new ArgumentListExpression(targetClassExpression, sourceClassExpression));
-    
-        return new MethodCallExpression(mapper, TO_A_METHOD_NAME, new ArgumentListExpression(sourceFieldValue));
-    }
-
-    Expression generateStringFieldValue(Expression sourceFieldValue) {
-        new MethodCallExpression(sourceFieldValue, TO_STRING, EMPTY_ARGUMENTS)
-    }
-
-    Expression generatePrimitiveFieldValue(ClassNode targetFieldType, Expression sourceFieldValue) {
-        new StaticMethodCallExpression(ClassHelper.getWrapper(targetFieldType), VALUE_OF, new ArgumentListExpression(sourceFieldValue))
-    }
-
-    Expression generateEnumFieldValue(ClassNode targetFieldType, Expression sourceFieldValue) {
-        Expression enumKey = null;
-        switch(sourceFieldValue.type) {
-            case {it.enum}:
-                enumKey = new MethodCallExpression(sourceFieldValue, "name", EMPTY_ARGUMENTS);
-                break;
-            case ClassHelper.STRING_TYPE:
-                enumKey = sourceFieldValue;
-                break;
-        }
-        if(enumKey == null) {
-            return null;
-        }
-        return new StaticMethodCallExpression(targetFieldType, VALUE_OF, new ArgumentListExpression(new ClassExpression(targetFieldType), enumKey));
-    }
-    
 }
