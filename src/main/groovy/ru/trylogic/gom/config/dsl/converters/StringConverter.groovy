@@ -17,6 +17,6 @@ class StringConverter extends AbstractConverter {
 
     @Override
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
-        return new MethodCallExpression(sourceFieldValue, TO_STRING, EMPTY_ARGUMENTS)
+        return nullSafe(sourceFieldValue, new MethodCallExpression(sourceFieldValue, TO_STRING, EMPTY_ARGUMENTS));
     }
 }

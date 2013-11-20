@@ -17,6 +17,6 @@ class PrimitiveConverter extends AbstractConverter {
 
     @Override
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
-        new StaticMethodCallExpression(ClassHelper.getWrapper(targetFieldType), VALUE_OF, new ArgumentListExpression(sourceFieldValue))
+        return nullSafe(sourceFieldValue, new StaticMethodCallExpression(ClassHelper.getWrapper(targetFieldType), VALUE_OF, new ArgumentListExpression(sourceFieldValue)))
     }
 }

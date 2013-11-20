@@ -29,4 +29,6 @@ class PersonDTO {
     List<PersonDTO> friends;
 
     Map<AddressDTO, String> addressNotes;
+
+    Set<String> favouriteAnimals;
 }

@@ -33,6 +33,6 @@ class EnumConverter extends AbstractConverter {
         if(enumKey == null) {
             return null;
         }
-        return new StaticMethodCallExpression(targetFieldType, VALUE_OF, new ArgumentListExpression(new ClassExpression(targetFieldType), enumKey));
+        return nullSafe(sourceFieldValue, new StaticMethodCallExpression(targetFieldType, VALUE_OF, new ArgumentListExpression(new ClassExpression(targetFieldType), enumKey)));
     }
 }

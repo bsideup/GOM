@@ -209,13 +209,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         def sourceFieldValue = new PropertyExpression(new VariableExpression(sourceParameter), sourceField.name)
         sourceFieldValue.type = sourceClassNode.getField(sourceField.name).type
         
-        def value = generateFieldValue(mapperClassNode, targetField.type, sourceFieldValue)
-        
-        if(value == null) {
-            return null;
-        }
-
-        return new TernaryExpression(notNullExpr(sourceFieldValue), value, ConstantExpression.NULL);
+        return generateFieldValue(mapperClassNode, targetField.type, sourceFieldValue)
     }
     
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {

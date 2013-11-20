@@ -82,6 +82,6 @@ class MapConverter extends AbstractConverter {
         methodCode.statements << new ReturnStatement(resultVariable);
 
         def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);
-        return new MethodCallExpression(THIS_EXPRESSION, method.name, sourceFieldValue);
+        return nullSafe(sourceFieldValue, new MethodCallExpression(THIS_EXPRESSION, method.name, sourceFieldValue));
     }
 }

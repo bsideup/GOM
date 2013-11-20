@@ -27,6 +27,7 @@ class SimpleTest extends Specification {
         def person = new PersonDTO(name: name, sex: sex, age: age, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode), friends: friends)
         person.addressNotes = new HashMap<>();
         person.addressNotes.put(person.address, currentAddressNote);
+        person.favouriteAnimals = favouriteAnimals;
         
         Person result = mapper.toA(person)
 
@@ -44,9 +45,14 @@ class SimpleTest extends Specification {
         
         result.addressNotes.get(result.address) == currentAddressNote
 
+        result.favouriteAnimals != null
+        result.favouriteAnimals.size() == 2
+        result.favouriteAnimals.any {it == favouriteAnimals[0]}
+        result.favouriteAnimals.any {it == favouriteAnimals[1]}
+
         where:
-        name    | age | sex           | phone | streetParts               | zipCode | friends                       | currentAddressNote
-        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack")] | "Great flat!"
+        name    | age | sex           | phone | streetParts               | zipCode | friends                       | currentAddressNote | favouriteAnimals
+        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack")] | "Great flat!"      | ["cat", "panda"]
     }
 
     def "test to b"(){
@@ -54,6 +60,7 @@ class SimpleTest extends Specification {
         def person = new Person(name: name, sex: sex, age: age, phone: phone, address: new Address(street: street, zipCode: zipCode), friends: friends)
         person.addressNotes = new HashMap<>();
         person.addressNotes.put(person.address, currentAddressNote);
+        person.favouriteAnimals = favouriteAnimals;
         
         PersonDTO result = mapper.toB(person)
 
@@ -71,8 +78,13 @@ class SimpleTest extends Specification {
 
         result.addressNotes.get(result.address) == currentAddressNote
 
+        result.favouriteAnimals != null
+        result.favouriteAnimals.size() == 2
+        result.favouriteAnimals.any {it == favouriteAnimals[0]}
+        result.favouriteAnimals.any {it == favouriteAnimals[1]}
+
         where:
-        name   | age  | sex      | phone | street             | zipCode     | friends                    | currentAddressNote
-        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack")] | "Great flat!"
+        name   | age  | sex      | phone | street             | zipCode     | friends                    | currentAddressNote | favouriteAnimals
+        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack")] | "Great flat!"      | ["cat", "panda"]
     }
 }

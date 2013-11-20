@@ -29,5 +29,7 @@ class Person {
     List<Person> friends;
     
     Map<Address, String> addressNotes;
+    
+    Set<String> favouriteAnimals;
 }
 
