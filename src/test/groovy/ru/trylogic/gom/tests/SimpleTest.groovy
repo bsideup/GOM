@@ -43,6 +43,8 @@ class SimpleTest extends Specification {
         result.friends.size() == 1
         result.friends.any {it.name == friends[0].name}
         
+        result.addressNotes.keySet().first() == result.address
+        
         result.addressNotes.get(result.address) == currentAddressNote
 
         result.favouriteAnimals != null
@@ -75,6 +77,8 @@ class SimpleTest extends Specification {
         result.friends != null
         result.friends.size() == 1
         result.friends.any {it.name == friends[0].name}
+
+        result.addressNotes.keySet().first() == result.address
 
         result.addressNotes.get(result.address) == currentAddressNote
 

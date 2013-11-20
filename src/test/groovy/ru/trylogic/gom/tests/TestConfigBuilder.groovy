@@ -19,7 +19,7 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
             }
             
             toB { Address address ->
-                new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: Integer.valueOf(address?.zipCode))
+                new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: address?.zipCode != null ? Integer.valueOf(address?.zipCode) : 0)
             }
         },
             
