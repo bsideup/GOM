@@ -8,11 +8,7 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
-
-import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
-import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
 import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 

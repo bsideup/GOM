@@ -17,7 +17,6 @@ import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
-import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
 import static groovyjarjarasm.asm.Opcodes.*;
 
