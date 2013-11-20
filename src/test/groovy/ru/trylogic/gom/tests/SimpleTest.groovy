@@ -35,12 +35,13 @@ class SimpleTest extends Specification {
         a.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
         
         a.friends != null
-        a.friends.size() == 1
-        a.friends.any {it.name == friends.first().name}
+        a.friends.size() == 2
+        a.friends.any {it.name == friends[0].name}
+        a.friends.any {it.name == friends[1].name}
 
         where:
         name    | age | sex           | phone | streetParts               | zipCode | friends
-        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack")]
+        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack"), new PersonDTO(name: "Otto")]
     }
 
     def "test to b"(){
@@ -56,11 +57,12 @@ class SimpleTest extends Specification {
         b.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
         
         b.friends != null
-        b.friends.size() == 1
-        b.friends.any {it.name == friends.first().name}
+        b.friends.size() == 2
+        b.friends.any {it.name == friends[0].name}
+        b.friends.any {it.name == friends[1].name}
 
         where:
         name   | age  | sex      | phone | street             | zipCode     | friends
-        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack")]
+        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack"), new Person(name: "Otto")]
     }
 }

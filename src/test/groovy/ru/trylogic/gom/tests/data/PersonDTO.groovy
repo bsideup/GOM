@@ -10,7 +10,7 @@ class PersonDTO {
     static class AddressDTO {
         List<String> streetParts
 
-        Integer zipCode
+        int zipCode
     }
     
     String name;

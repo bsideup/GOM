@@ -184,8 +184,9 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         }
         
         def sourceFieldValue = new PropertyExpression(new VariableExpression(sourceParameter), sourceField.name)
-
-        def value = generateFieldValue(config, mapperClassNode, targetField.type, sourceField.type, sourceFieldValue)
+        sourceFieldValue.type = sourceClassNode.getField(sourceField.name).type
+        
+        def value = generateFieldValue(config, mapperClassNode, targetField.type, sourceFieldValue)
         
         if(value == null) {
             return null;
@@ -194,10 +195,21 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return new TernaryExpression(notNullExpr(sourceFieldValue), value, ConstantExpression.NULL);
     }
     
-    Expression generateFieldValue(GOMConfig config, InnerClassNode mapperClassNode, ClassNode targetFieldType, ClassNode sourceFieldType, Expression sourceFieldValue) {
-
-        if(sourceFieldType.isDerivedFrom(ClassHelper.LIST_TYPE) || sourceFieldType.implementsInterface(ClassHelper.LIST_TYPE)) {
-            return generateListFieldValue(config, mapperClassNode, targetFieldType, sourceFieldType, sourceFieldValue);
+    static boolean is(ClassNode type, ClassNode to) {
+        return type.isDerivedFrom(to) || type.implementsInterface(to);
+    }
+    
+    Expression generateFieldValue(GOMConfig config, InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+        def sourceFieldType = sourceFieldValue.type;
+        if(is(targetFieldType, ClassHelper.LIST_TYPE)) {
+            if(!is(sourceFieldType, ClassHelper.makeWithoutCaching(Iterable, false))) {
+                return null;
+            }
+            if(sourceFieldType.genericsTypes == null || sourceFieldType.genericsTypes.size() != 1) {
+                return null;
+            }
+            
+            return generateCollectionFieldValue(config, mapperClassNode, targetFieldType, sourceFieldValue);
         }
         
         if(targetFieldType.isDerivedFrom(sourceFieldType)) {
@@ -205,14 +217,14 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         }
 
         if(config.mappings.any { it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldType.name)}) {
-            return generateKnownMappingFieldValue(targetFieldType, sourceFieldType, sourceFieldValue)
+            return generateKnownMappingFieldValue(targetFieldType, sourceFieldValue)
         }
 
         def unwrappedAFieldType = ClassHelper.getUnwrapper(targetFieldType)
 
         switch(unwrappedAFieldType) {
             case {it.enum}:
-                return generateEnumFieldValue(targetFieldType, sourceFieldType, sourceFieldValue);
+                return generateEnumFieldValue(targetFieldType, sourceFieldValue);
             case {ClassHelper.isPrimitiveType(it)}:
                 return generatePrimitiveFieldValue(targetFieldType, sourceFieldValue);
             case ClassHelper.STRING_TYPE:
@@ -220,50 +232,55 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         }
 
         //TODO warn about no mapping
-        return sourceFieldValue;
+        return null;
     }
     
-    Expression generateListFieldValue(GOMConfig config, InnerClassNode mapperClassNode, ClassNode targetFieldType, ClassNode sourceFieldType, Expression sourceFieldValue) {
-        def sourceListType = ClassHelper.makeWithoutCaching(ArrayList, false);
-        sourceListType.genericsTypes = sourceFieldType.genericsTypes;
-        sourceListType.usingGenerics = sourceFieldType.usingGenerics;
+    Expression generateCollectionFieldValue(GOMConfig config, InnerClassNode mapperClassNode, ClassNode targetListType, Expression sourceFieldValue) {
+        ClassNode resultVariableType;
+        switch(targetListType) {
+            case ClassHelper.LIST_TYPE:
+                resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
+                break;
+            case ClassHelper.makeWithoutCaching(Set, false):
+                resultVariableType = ClassHelper.makeWithoutCaching(HashSet, false);
+                break;
+            default:
+                resultVariableType = targetListType;
+        }
+
+        resultVariableType.usingGenerics = true;
+        resultVariableType.genericsTypes = targetListType.genericsTypes
+
+        def resultVariable = new VariableExpression('$result', resultVariableType)
+
+        Parameter sourceParameter = new Parameter(sourceFieldValue.type, '$source')
         
-        def sourceT = sourceListType.genericsTypes.first().type;
-
-        def targetListType = ClassHelper.makeWithoutCaching(ArrayList, false);
-        targetListType.genericsTypes = targetFieldType.genericsTypes;
-        targetListType.usingGenerics = targetFieldType.usingGenerics;
-
-        def targetT = targetListType.genericsTypes.first().type;
-
-        Parameter sourceParameter = new Parameter(sourceListType, '$source')
         def methodCode = new BlockStatement();
+        methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
         
-        def resultVariable = new VariableExpression('$result', targetListType)
-        methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.type, EMPTY_ARGUMENTS));
-        
-        
-        def iParameter = new Parameter(sourceT, '$item');
         def loopBlock = new BlockStatement();
 
-        def value = generateFieldValue(config, mapperClassNode, targetT, sourceT, new VariableExpression(iParameter))
+        def iParameter = new Parameter(sourceParameter.type.genericsTypes.first().type, '$item');
+        
+        def value = generateFieldValue(config, mapperClassNode, resultVariable.originType.genericsTypes.first().type, new VariableExpression(iParameter))
+        
         loopBlock.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value));
         methodCode.statements << new ForStatement(iParameter, new VariableExpression(sourceParameter), loopBlock);
         methodCode.statements << new ReturnStatement(resultVariable);
         
-        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, targetListType, [sourceParameter] as Parameter[], null, methodCode);
+        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);
         return new MethodCallExpression(THIS_EXPRESSION, method.name, sourceFieldValue);
     }
     
-    Expression generateKnownMappingFieldValue(ClassNode targetFieldType, ClassNode sourceFieldType, Expression bFieldValue) {
+    Expression generateKnownMappingFieldValue(ClassNode targetFieldType, Expression sourceFieldValue) {
         //TODO caching
 
         def targetClassExpression = new ClassExpression(targetFieldType)
-        def sourceClassExpression = new ClassExpression(sourceFieldType)
+        def sourceClassExpression = new ClassExpression(sourceFieldValue.type)
 
         def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, GOM_FIELD_NAME), "getTransformer", new ArgumentListExpression(targetClassExpression, sourceClassExpression));
     
-        return new MethodCallExpression(mapper, TO_A_METHOD_NAME, new ArgumentListExpression(bFieldValue));
+        return new MethodCallExpression(mapper, TO_A_METHOD_NAME, new ArgumentListExpression(sourceFieldValue));
     }
 
     Expression generateStringFieldValue(Expression sourceFieldValue) {
@@ -274,9 +291,9 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         new StaticMethodCallExpression(ClassHelper.getWrapper(targetFieldType), VALUE_OF, new ArgumentListExpression(sourceFieldValue))
     }
 
-    Expression generateEnumFieldValue(ClassNode targetFieldType, ClassNode sourceFieldType, Expression sourceFieldValue) {
+    Expression generateEnumFieldValue(ClassNode targetFieldType, Expression sourceFieldValue) {
         Expression enumKey = null;
-        switch(sourceFieldType) {
+        switch(sourceFieldValue.type) {
             case {it.enum}:
                 enumKey = new MethodCallExpression(sourceFieldValue, "name", EMPTY_ARGUMENTS);
                 break;
