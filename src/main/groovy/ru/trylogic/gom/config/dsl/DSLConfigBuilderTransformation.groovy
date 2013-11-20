@@ -33,7 +33,7 @@ public class DSLConfigBuilderTransformation implements ASTTransformation, Compil
 
         def config = new DSLExecutor(compilationUnit).execute(classNode, source);
         
-        def transformers = new MapperProcessor(compilationUnit).process(classNode, config);
+        def transformers = new MapperProcessor(compilationUnit, config).process(classNode);
 
         transformers.each(classNode.module.&addClass);
 

@@ -76,16 +76,19 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     }
     
     CompilationUnit compilationUnit;
+    
+    GOMConfig config;
 
-    MapperProcessor(CompilationUnit compilationUnit) {
+    MapperProcessor(CompilationUnit compilationUnit, GOMConfig config) {
         this.compilationUnit = compilationUnit
+        this.config = config
     }
 
-    Set<InnerClassNode> process(ClassNode classNode, GOMConfig config) {
-        return config.mappings.collect { processMapping(config, classNode, it) }
+    Set<InnerClassNode> process(ClassNode classNode) {
+        return config.mappings.collect { processMapping(classNode, it) }
     }
     
-    InnerClassNode processMapping(GOMConfig config, ClassNode classNode, Mapping mapping) {
+    InnerClassNode processMapping(ClassNode classNode, Mapping mapping) {
         int counter = 0;
 
         String className;
@@ -114,8 +117,8 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         mapperClassNode.addMethod(generateTypeGetter("getSourceType", aClassNode));
         mapperClassNode.addMethod(generateTypeGetter("getTargetType", bClassNode));
 
-        mapperClassNode.addMethod(generateToMethod(Direction.A, config, mapperClassNode, mapping, aClassNode, bClassNode));
-        mapperClassNode.addMethod(generateToMethod(Direction.B, config, mapperClassNode, mapping, bClassNode, aClassNode));
+        mapperClassNode.addMethod(generateToMethod(Direction.A, mapperClassNode, mapping, aClassNode, bClassNode));
+        mapperClassNode.addMethod(generateToMethod(Direction.B, mapperClassNode, mapping, bClassNode, aClassNode));
         
         return mapperClassNode;
     }
@@ -128,7 +131,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return new MethodNode(name, ACC_PUBLIC, nodeClass, EMPTY_ARRAY, null, new ReturnStatement(new ClassExpression(node)));
     }
 
-    MethodNode generateToMethod(Direction direction, GOMConfig config, InnerClassNode mapperClassNode, Mapping mapping, ClassNode targetClassNode, ClassNode sourceClassNode) {
+    MethodNode generateToMethod(Direction direction, InnerClassNode mapperClassNode, Mapping mapping, ClassNode targetClassNode, ClassNode sourceClassNode) {
         def toMethodCode = direction.toMethodCode(mapping)
         if(toMethodCode != null) {
             def closure = new ClosureCompiler(compilationUnit).compile(toMethodCode);
@@ -150,7 +153,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
                 return;
             }
 
-            Expression value = generateFieldAssign(direction, config, mapping, mapperClassNode, targetClassNode, sourceClassNode, targetField, sourceParameter);
+            Expression value = generateFieldAssign(direction, mapping, mapperClassNode, targetClassNode, sourceClassNode, targetField, sourceParameter);
 
             if(value == null) {
                 return;
@@ -165,7 +168,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return new MethodNode(direction.toMethodName, ACC_PUBLIC, targetClassNode, [sourceParameter] as Parameter[], null, methodBody)
     }
     
-    Expression generateFieldAssign(Direction direction, GOMConfig config, Mapping mapping, InnerClassNode mapperClassNode, ClassNode targetClassNode, ClassNode sourceClassNode, FieldNode targetField, Parameter sourceParameter) {
+    Expression generateFieldAssign(Direction direction, Mapping mapping, InnerClassNode mapperClassNode, ClassNode targetClassNode, ClassNode sourceClassNode, FieldNode targetField, Parameter sourceParameter) {
         Field fieldConfig = mapping.fields?.find { direction.getSourceFieldName(it) == targetField.name }
         String sourceFieldConverterCode = direction.getFieldConverterCode(fieldConfig);
         if(sourceFieldConverterCode != null) {
@@ -186,7 +189,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         def sourceFieldValue = new PropertyExpression(new VariableExpression(sourceParameter), sourceField.name)
         sourceFieldValue.type = sourceClassNode.getField(sourceField.name).type
         
-        def value = generateFieldValue(config, mapperClassNode, targetField.type, sourceFieldValue)
+        def value = generateFieldValue(mapperClassNode, targetField.type, sourceFieldValue)
         
         if(value == null) {
             return null;
@@ -199,7 +202,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return type.isDerivedFrom(to) || type.implementsInterface(to);
     }
     
-    Expression generateFieldValue(GOMConfig config, InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         def sourceFieldType = sourceFieldValue.type;
         if(is(targetFieldType, ClassHelper.LIST_TYPE)) {
             if(!is(sourceFieldType, ClassHelper.makeWithoutCaching(Iterable, false))) {
@@ -209,7 +212,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
                 return null;
             }
             
-            return generateCollectionFieldValue(config, mapperClassNode, targetFieldType, sourceFieldValue);
+            return generateCollectionFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
         }
         
         if(targetFieldType.isDerivedFrom(sourceFieldType)) {
@@ -235,7 +238,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         return null;
     }
     
-    Expression generateCollectionFieldValue(GOMConfig config, InnerClassNode mapperClassNode, ClassNode targetListType, Expression sourceFieldValue) {
+    Expression generateCollectionFieldValue(InnerClassNode mapperClassNode, ClassNode targetListType, Expression sourceFieldValue) {
         ClassNode resultVariableType;
         switch(targetListType) {
             case ClassHelper.LIST_TYPE:
@@ -262,7 +265,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
 
         def iParameter = new Parameter(sourceParameter.type.genericsTypes.first().type, '$item');
         
-        def value = generateFieldValue(config, mapperClassNode, resultVariable.originType.genericsTypes.first().type, new VariableExpression(iParameter))
+        def value = generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes.first().type, new VariableExpression(iParameter))
         
         loopBlock.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value));
         methodCode.statements << new ForStatement(iParameter, new VariableExpression(sourceParameter), loopBlock);
