@@ -1,5 +1,7 @@
 package ru.trylogic.gom.tests.data
 
+import groovy.transform.EqualsAndHashCode
+
 class PersonDTO {
     
     static enum SexDTO {
@@ -7,6 +9,7 @@ class PersonDTO {
         MALE
     }
     
+    @EqualsAndHashCode
     static class AddressDTO {
         List<String> streetParts
 
@@ -24,4 +27,6 @@ class PersonDTO {
     AddressDTO address;
     
     List<PersonDTO> friends;
+
+    Map<AddressDTO, String> addressNotes;
 }

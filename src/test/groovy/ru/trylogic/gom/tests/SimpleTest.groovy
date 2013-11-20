@@ -24,45 +24,55 @@ class SimpleTest extends Specification {
 
     def "test to a"(){
 
-        Person a = mapper.toA(new PersonDTO(name: name, sex: sex, age: age, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode), friends: friends))
+        def person = new PersonDTO(name: name, sex: sex, age: age, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode), friends: friends)
+        person.addressNotes = new HashMap<>();
+        person.addressNotes.put(person.address, currentAddressNote);
+        
+        Person result = mapper.toA(person)
 
         expect:
-        a.phone == phone
-        a.age == age.toString()
-        a.sex == Sex.valueOf(Sex, sex.name())
-        a.name == name
-        a.address?.zipCode == zipCode.toString()
-        a.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
+        result.phone == phone
+        result.age == age.toString()
+        result.sex == Sex.valueOf(Sex, sex.name())
+        result.name == name
+        result.address?.zipCode == zipCode.toString()
+        result.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
         
-        a.friends != null
-        a.friends.size() == 2
-        a.friends.any {it.name == friends[0].name}
-        a.friends.any {it.name == friends[1].name}
+        result.friends != null
+        result.friends.size() == 1
+        result.friends.any {it.name == friends[0].name}
+        
+        result.addressNotes.get(result.address) == currentAddressNote
 
         where:
-        name    | age | sex           | phone | streetParts               | zipCode | friends
-        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack"), new PersonDTO(name: "Otto")]
+        name    | age | sex           | phone | streetParts               | zipCode | friends                       | currentAddressNote
+        "John"  | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(name: "Jack")] | "Great flat!"
     }
 
     def "test to b"(){
 
-        PersonDTO b = mapper.toB(new Person(name: name, sex: sex, age: age, phone: phone, address: new Address(street: street, zipCode: zipCode), friends : friends))
+        def person = new Person(name: name, sex: sex, age: age, phone: phone, address: new Address(street: street, zipCode: zipCode), friends: friends)
+        person.addressNotes = new HashMap<>();
+        person.addressNotes.put(person.address, currentAddressNote);
+        
+        PersonDTO result = mapper.toB(person)
 
         expect:
-        b.aPhone == phone
-        b.age == age.toInteger()
-        b.sex == SexDTO.valueOf(SexDTO, sex.name())
-        b.name == name
-        b.address?.zipCode == zipCode.toInteger()
-        b.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
+        result.aPhone == phone
+        result.age == age.toInteger()
+        result.sex == SexDTO.valueOf(SexDTO, sex.name())
+        result.name == name
+        result.address?.zipCode == zipCode.toInteger()
+        result.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
         
-        b.friends != null
-        b.friends.size() == 2
-        b.friends.any {it.name == friends[0].name}
-        b.friends.any {it.name == friends[1].name}
+        result.friends != null
+        result.friends.size() == 1
+        result.friends.any {it.name == friends[0].name}
+
+        result.addressNotes.get(result.address) == currentAddressNote
 
         where:
-        name   | age  | sex      | phone | street             | zipCode     | friends
-        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack"), new Person(name: "Otto")]
+        name   | age  | sex      | phone | street             | zipCode     | friends                    | currentAddressNote
+        "John" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack")] | "Great flat!"
     }
 }

@@ -1,16 +1,19 @@
 package ru.trylogic.gom.tests.data
 
+import groovy.transform.EqualsAndHashCode
+
 class Person {
+
+    static enum Sex {
+        MALE,
+        FEMALE
+    }
     
+    @EqualsAndHashCode
     static class Address {
         String zipCode;
         
         String street;
-    }
-    
-    static enum Sex {
-        MALE,
-        FEMALE
     }
     
     String name;
@@ -24,5 +27,7 @@ class Person {
     Address address;
     
     List<Person> friends;
+    
+    Map<Address, String> addressNotes;
 }
 

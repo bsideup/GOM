@@ -16,6 +16,7 @@ import ru.trylogic.gom.config.dsl.converters.Converter
 import ru.trylogic.gom.config.dsl.converters.DerivedMatchConverter
 import ru.trylogic.gom.config.dsl.converters.EnumConverter
 import ru.trylogic.gom.config.dsl.converters.KnownMappingConverter
+import ru.trylogic.gom.config.dsl.converters.MapConverter
 import ru.trylogic.gom.config.dsl.converters.PrimitiveConverter
 import ru.trylogic.gom.config.dsl.converters.StringConverter
 
@@ -89,6 +90,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     List<Converter> converters = [
         new KnownMappingConverter(),
         new DerivedMatchConverter(),
+        new MapConverter(),
         new CollectionConverter(),
         new EnumConverter(),
         new PrimitiveConverter(),

@@ -4,9 +4,12 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.VariableScope
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
@@ -20,22 +23,21 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 
 import static groovyjarjarasm.asm.Opcodes.*;
 
-class CollectionConverter extends AbstractConverter {
-
+class MapConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        if(!(isCastingTo(targetFieldType, ClassHelper.LIST_TYPE) || isCastingTo(targetFieldType, ClassHelper.makeWithoutCaching(Set, false)))) {
-            return false;
-        }
-        
-        if(!isCastingTo(sourceFieldType, ClassHelper.makeWithoutCaching(Iterable, false))) {
+        if(!(isCastingTo(targetFieldType, ClassHelper.MAP_TYPE))) {
             return false;
         }
 
-        if(sourceFieldType.genericsTypes?.size() != 1) {
+        if(!isCastingTo(sourceFieldType, ClassHelper.MAP_TYPE)) {
             return false;
         }
-        
+
+        if(sourceFieldType.genericsTypes?.size() != 2) {
+            return false;
+        }
+
         return true;
     }
 
@@ -43,11 +45,9 @@ class CollectionConverter extends AbstractConverter {
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         ClassNode resultVariableType;
         switch(targetFieldType) {
-            case ClassHelper.LIST_TYPE:
-                resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
+            case ClassHelper.MAP_TYPE:
+                resultVariableType = ClassHelper.makeWithoutCaching(HashMap, false);
                 break;
-            case ClassHelper.makeWithoutCaching(Set, false):
-                resultVariableType = ClassHelper.makeWithoutCaching(HashSet, false);
                 break;
             default:
                 resultVariableType = targetFieldType;
@@ -63,14 +63,22 @@ class CollectionConverter extends AbstractConverter {
         def methodCode = new BlockStatement();
         methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
 
-        def loopBlock = new BlockStatement();
+        def entryType = ClassHelper.makeWithoutCaching(Map.Entry, false);
+        entryType.usingGenerics = true;
+        entryType.genericsTypes = sourceParameter.type.genericsTypes;
+        
+        def iParameter = new Parameter(entryType, '$entry');
+        
+        def keyExpression = new PropertyExpression(new VariableExpression(iParameter), "key");
+        keyExpression.type = entryType.genericsTypes.first().type;
+        def key = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[0].type, keyExpression)
 
-        def iParameter = new Parameter(sourceParameter.type.genericsTypes.first().type, '$item');
+        def valueExpression = new PropertyExpression(new VariableExpression(iParameter), "value");
+        def value = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[1].type, valueExpression)
 
-        def value = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes.first().type, new VariableExpression(iParameter))
 
-        loopBlock.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value));
-        methodCode.statements << new ForStatement(iParameter, new VariableExpression(sourceParameter), loopBlock);
+        def forBody = new ExpressionStatement(new MethodCallExpression(resultVariable, "put", new ArgumentListExpression(key, value)))
+        methodCode.statements << new ForStatement(iParameter, new MethodCallExpression(new VariableExpression(sourceParameter), "entrySet", EMPTY_ARGUMENTS), new BlockStatement([forBody], new VariableScope()));
         methodCode.statements << new ReturnStatement(resultVariable);
 
         def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);
