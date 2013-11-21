@@ -11,6 +11,7 @@ import ru.trylogic.gom.tests.data.PersonDTO.AddressDTO
 class TestConfigBuilder extends DSLConfigBuilderBase {
 
     public static final String STREET_PARTS_GLUE = " ";
+    public static final String NAME_GLUE = " ";
     
     {
         mapping(Address, AddressDTO) {
@@ -25,6 +26,30 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
             
         mapping(Person, PersonDTO) {
             field ("phone", "aPhone")
+            
+            field ("name") {
+                a { PersonDTO person -> person.firstName + NAME_GLUE + person.secondName }
+            }
+
+            field("firstName") {
+                b { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 0) }
+            }
+
+            field("secondName") {
+                b { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 1) }
+            }
         }
+    }
+    
+    static <T> T elementOrNull(T[] elements, int index) {
+        if(elements == null) {
+            return null;
+        }
+        
+        if(elements.size() <= index) {
+            return null;
+        }
+        
+        return elements[index];
     }
 }

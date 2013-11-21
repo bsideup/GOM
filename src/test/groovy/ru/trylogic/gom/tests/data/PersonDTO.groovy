@@ -16,7 +16,9 @@ class PersonDTO {
         int zipCode
     }
     
-    String name;
+    String firstName;
+    
+    String secondName;
 
     String aPhone;
     
