@@ -9,6 +9,7 @@ import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
+import ru.trylogic.gom.Transformer
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -46,9 +47,14 @@ public class DSLConfigBuilderTransformation implements ASTTransformation, Compil
 
     MethodNode generateBuildMethod(Set<InnerClassNode> transformers) {
         def resultClassNode = ClassHelper.makeWithoutCaching(HashSet, false);
+        resultClassNode.usingGenerics = true;
+        resultClassNode.genericsTypes = [new GenericsType(ClassHelper.makeWithoutCaching(Transformer, false))];
 
         def methodBody = new BlockStatement();
-        def methodNode = new MethodNode("getMappers", ACC_PUBLIC, ClassHelper.makeWithoutCaching(Collection, false), EMPTY_ARRAY, null, methodBody)
+        def methodNode = new MethodNode("getTransformers", ACC_PUBLIC, ClassHelper.makeWithoutCaching(Collection, false), EMPTY_ARRAY, null, methodBody)
+        methodNode.returnType.usingGenerics = resultClassNode.usingGenerics;
+        methodNode.returnType.genericsTypes = resultClassNode.genericsTypes;
+        methodNode.addAnnotation(new AnnotationNode(ClassHelper.makeWithoutCaching(Override, false)));
         def resultVariable = new VariableExpression('$result', resultClassNode)
 
         methodBody.statements << declStatement(resultVariable, new ConstructorCallExpression(resultClassNode, EMPTY_ARGUMENTS))

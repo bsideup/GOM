@@ -6,5 +6,7 @@ public interface ConfigBuilder {
     
     GOMConfig build();
 
-    def getMappers();
+    //def getMappers();
+    
+    Collection<Transformer> getTransformers(); 
 }

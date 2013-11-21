@@ -48,7 +48,7 @@ class DSLExecutor implements CompilationUnitAware {
                 return;
             }
 
-            progressClassNode?.getField("mappers")?.initialExpression?.visit(new CodeVisitorSupport() {
+            progressClassNode?.objectInitializerStatements*.visit(new CodeVisitorSupport() {
                 @Override
                 void visitMethodCallExpression(MethodCallExpression call) {
                     super.visitMethodCallExpression(call)

@@ -7,7 +7,7 @@ class GOM {
     Map<Class, Map<Class, Transformer>> transformers = new HashMap<>();
 
     GOM(ConfigBuilder configBuilder) {
-        configBuilder.getMappers().each { Transformer it ->
+        configBuilder.getTransformers().each { Transformer it ->
             if(!transformers.containsKey(it.sourceType)) {
                 transformers.put(it.sourceType, new HashMap<Class, Transformer>());
             }

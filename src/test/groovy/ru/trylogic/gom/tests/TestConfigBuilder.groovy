@@ -10,9 +10,9 @@ import ru.trylogic.gom.tests.data.PersonDTO.AddressDTO
 @DSLConfigBuilder
 class TestConfigBuilder extends DSLConfigBuilderBase {
 
-    public static final String STREET_PARTS_GLUE = " "
+    public static final String STREET_PARTS_GLUE = " ";
     
-    def mappers = [
+    {
         mapping(Address, AddressDTO) {
             toA { AddressDTO address ->
                 new Address(street: address?.streetParts?.join(STREET_PARTS_GLUE), zipCode: address?.zipCode?.toString())
@@ -21,10 +21,10 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
             toB { Address address ->
                 new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: address?.zipCode != null ? Integer.valueOf(address?.zipCode) : 0)
             }
-        },
+        }
             
         mapping(Person, PersonDTO) {
             field ("phone", "aPhone")
         }
-    ]
+    }
 }

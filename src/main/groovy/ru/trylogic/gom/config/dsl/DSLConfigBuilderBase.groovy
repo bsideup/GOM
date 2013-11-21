@@ -1,5 +1,6 @@
 package ru.trylogic.gom.config.dsl
 
+import ru.trylogic.gom.Transformer
 import ru.trylogic.gom.config.ConfigBuilder
 import ru.trylogic.gom.config.GOMConfig
 
@@ -59,8 +60,9 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
             check();
         }
     }
+
     
-    abstract def getMappers();
+    Collection<Transformer> getTransformers() {}
     
     GOMConfig build() {
         return result;
