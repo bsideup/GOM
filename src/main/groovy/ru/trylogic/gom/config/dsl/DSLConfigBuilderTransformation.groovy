@@ -54,7 +54,6 @@ public class DSLConfigBuilderTransformation implements ASTTransformation, Compil
         def methodNode = new MethodNode("getTransformers", ACC_PUBLIC, ClassHelper.makeWithoutCaching(Collection, false), EMPTY_ARRAY, null, methodBody)
         methodNode.returnType.usingGenerics = resultClassNode.usingGenerics;
         methodNode.returnType.genericsTypes = resultClassNode.genericsTypes;
-        methodNode.addAnnotation(new AnnotationNode(ClassHelper.makeWithoutCaching(Override, false)));
         def resultVariable = new VariableExpression('$result', resultClassNode)
 
         methodBody.statements << declStatement(resultVariable, new ConstructorCallExpression(resultClassNode, EMPTY_ARGUMENTS))

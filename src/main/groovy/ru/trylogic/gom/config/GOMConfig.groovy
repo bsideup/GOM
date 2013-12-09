@@ -1,6 +1,7 @@
 package ru.trylogic.gom.config
 
 import groovy.transform.ToString
+import ru.trylogic.gom.converters.*
 
 @ToString
 class GOMConfig {
@@ -47,6 +48,16 @@ class GOMConfig {
     }
     
     Set<Mapping> mappings;
+
+    List<Converter> converters = [
+            new KnownMappingConverter(),
+            new DerivedMatchConverter(),
+            new MapConverter(),
+            new CollectionConverter(),
+            new EnumConverter(),
+            new PrimitiveConverter(),
+            new StringConverter()
+    ]
 
     GOMConfig() {
         this(new HashSet<Mapping>())

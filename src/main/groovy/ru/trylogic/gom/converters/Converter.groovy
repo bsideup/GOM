@@ -1,4 +1,4 @@
-package ru.trylogic.gom.config.dsl.converters
+package ru.trylogic.gom.converters
 
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode

@@ -11,14 +11,6 @@ import ru.trylogic.gom.Transformer
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.GOMConfig.Mapping
 import ru.trylogic.gom.config.GOMConfig.Mapping.Field
-import ru.trylogic.gom.config.dsl.converters.CollectionConverter
-import ru.trylogic.gom.config.dsl.converters.Converter
-import ru.trylogic.gom.config.dsl.converters.DerivedMatchConverter
-import ru.trylogic.gom.config.dsl.converters.EnumConverter
-import ru.trylogic.gom.config.dsl.converters.KnownMappingConverter
-import ru.trylogic.gom.config.dsl.converters.MapConverter
-import ru.trylogic.gom.config.dsl.converters.PrimitiveConverter
-import ru.trylogic.gom.config.dsl.converters.StringConverter
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -87,21 +79,11 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     GOMConfig config;
 
-    List<Converter> converters = [
-        new KnownMappingConverter(),
-        new DerivedMatchConverter(),
-        new MapConverter(),
-        new CollectionConverter(),
-        new EnumConverter(),
-        new PrimitiveConverter(),
-        new StringConverter()
-    ]
-
     MapperProcessor(CompilationUnit compilationUnit, GOMConfig config) {
         this.compilationUnit = compilationUnit
         this.config = config
 
-        converters*.init(compilationUnit, config, this);
+        config.converters*.init(compilationUnit, config, this);
     }
 
     Set<InnerClassNode> process(ClassNode classNode) {
@@ -214,6 +196,6 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         //TODO warn about no mapping
-        return converters.find {it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
+        return config.converters.find {it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
     }
 }
