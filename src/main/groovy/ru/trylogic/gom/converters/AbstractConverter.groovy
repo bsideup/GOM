@@ -5,6 +5,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.transform.AbstractASTTransformUtil
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.dsl.MapperProcessor
 
@@ -24,10 +25,6 @@ abstract class AbstractConverter implements Converter {
         this.mapperProcessor = mapperProcessor;
     }
 
-    boolean isCastingTo(ClassNode type, ClassNode to) {
-        return type.isDerivedFrom(to) || type.implementsInterface(to);
-    }
-    
     TernaryExpression nullSafe(Expression sourceFieldValue, Expression value) {
         return new TernaryExpression(notNullExpr(sourceFieldValue), value, ConstantExpression.NULL);
     }

@@ -12,6 +12,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.transform.AbstractASTTransformUtil
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -24,11 +25,8 @@ class CollectionConverter extends AbstractConverter {
 
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        if(!(isCastingTo(targetFieldType, ClassHelper.LIST_TYPE) || isCastingTo(targetFieldType, ClassHelper.makeWithoutCaching(Set, false)))) {
-            return false;
-        }
         
-        if(!isCastingTo(sourceFieldType, ClassHelper.makeWithoutCaching(Iterable, false))) {
+        if(!(isIterable(sourceFieldType))) {
             return false;
         }
 
@@ -36,7 +34,19 @@ class CollectionConverter extends AbstractConverter {
             return false;
         }
         
-        return true;
+        return isList(targetFieldType) || isSet(targetFieldType);
+    }
+
+    boolean isList(ClassNode classNode) {
+        return classNode == ClassHelper.LIST_TYPE;
+    }
+
+    boolean isSet(ClassNode classNode) {
+        return classNode == ClassHelper.makeWithoutCaching(Set, false);
+    }
+
+    boolean isIterable(ClassNode classNode) {
+        return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Iterable, false));
     }
 
     @Override
@@ -50,7 +60,7 @@ class CollectionConverter extends AbstractConverter {
                 resultVariableType = ClassHelper.makeWithoutCaching(HashSet, false);
                 break;
             default:
-                resultVariableType = targetFieldType;
+                resultVariableType = targetFieldType.getPlainNodeReference();
         }
 
         resultVariableType.usingGenerics = true;

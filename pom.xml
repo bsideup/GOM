@@ -58,5 +58,11 @@
             <version>0.7-groovy-2.0</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>ru.trylogic.groovy.macro</groupId>
+            <artifactId>macro-groovy</artifactId>
+            <version>1.0.1</version>
+        </dependency>
     </dependencies>
 </project>

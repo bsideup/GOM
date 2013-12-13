@@ -26,11 +26,11 @@ import static groovyjarjarasm.asm.Opcodes.*;
 class MapConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        if(!(isCastingTo(targetFieldType, ClassHelper.MAP_TYPE))) {
+        if(!(isOrImplements(targetFieldType, ClassHelper.MAP_TYPE))) {
             return false;
         }
 
-        if(!isCastingTo(sourceFieldType, ClassHelper.MAP_TYPE)) {
+        if(!isOrImplements(sourceFieldType, ClassHelper.MAP_TYPE)) {
             return false;
         }
 

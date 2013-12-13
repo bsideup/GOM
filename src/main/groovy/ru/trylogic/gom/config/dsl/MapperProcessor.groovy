@@ -23,10 +23,8 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     public static final String VALUE_OF = "valueOf"
     public static final String TO_STRING = "toString"
     public static final String GOM_FIELD_NAME = "gom"
-    public static final String TO_A_METHOD_NAME = "toA"
-
     static enum Direction {
-        A(TO_A_METHOD_NAME),
+        A("toA"),
         B("toB")
         
         String toMethodName;
@@ -53,14 +51,6 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
 
         String getSourceFieldName(Field field) {
             return ab(field?.aName, field?.bName);
-        }
-        
-        String getTargetClassName(Mapping mapping) {
-            return ab(mapping?.a, mapping?.b).name
-        }
-        
-        String getSourceClassName(Mapping mapping) {
-            return ab(mapping?.b, mapping?.a).name
         }
         
         def <T> T ab(T a, T b) {
