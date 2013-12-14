@@ -11,6 +11,7 @@ class GOMConfig {
     @ToString
     static class Mapping {
 
+        
         Class a
         Class b
 
@@ -18,17 +19,19 @@ class GOMConfig {
         String toB;
 
         Set<Field> fields;
+        boolean inverted;
 
         Mapping() {
-            this(null, null, null, null, new HashSet<Field>());
+            this(null, null, null, null, new HashSet<Field>(), false);
         }
 
-        Mapping(Class a, Class b, String toA, String toB, Set<Field> fields) {
+        Mapping(Class a, Class b, String toA, String toB, Set<Field> fields, boolean inverted) {
             this.a = a
             this.b = b
             this.toA = toA
             this.toB = toB
             this.fields = fields
+            this.inverted = inverted;
         }
     }
 
@@ -52,14 +55,16 @@ class GOMConfig {
     }
 
     static enum Direction {
-        A("a", "a"),
-        B("b", "b")
+        A("a", "b", "toA"),
+        B("b", "a", "toB")
 
         String parameterName;
+        String opositeParameterName;
         String toMethodName;
 
-        Direction(String parameterName, String toMethodName) {
+        Direction(String parameterName, String opositeParameterName, String toMethodName) {
             this.parameterName = parameterName;
+            this.opositeParameterName = opositeParameterName;
             this.toMethodName = toMethodName
         }
 

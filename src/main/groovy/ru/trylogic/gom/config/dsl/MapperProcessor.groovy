@@ -88,7 +88,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
         if(toMethodCode != null) {
             def closure = new ClosureCompiler(compilationUnit).compile(toMethodCode);
 
-            return new MethodNode(direction.toMethodName, ACC_PUBLIC, targetClassNode, closure.parameters, null, closure.code);
+            return new MethodNode(direction.toMethodName, ACC_PUBLIC, targetClassNode, [new Parameter(sourceClassNode, mapping.inverted ? direction.parameterName : direction.opositeParameterName)] as Parameter[], null, closure.code);
         }
 
         def methodBody = new BlockStatement();
@@ -127,7 +127,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
             def closure = new ClosureCompiler(compilationUnit).compile(sourceFieldConverterCode);
 
             def methodName = direction.getFieldConverterName(fieldConfig)
-            mapperClassNode.addMethod(methodName, ACC_PUBLIC, targetField.type, closure.parameters, null, closure.code);
+            mapperClassNode.addMethod(methodName, ACC_PUBLIC, targetField.type, [new Parameter(sourceClassNode, mapping.inverted ? direction.parameterName : direction.opositeParameterName)] as Parameter[], null, closure.code);
 
             return new MethodCallExpression(THIS_EXPRESSION, methodName, new ArgumentListExpression(sourceParameter));
         }

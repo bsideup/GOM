@@ -15,23 +15,23 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
     
     {
         mapping { Address a, AddressDTO b ->
-            toA { AddressDTO address -> new Address(street: address?.streetParts?.join(STREET_PARTS_GLUE), zipCode: address?.zipCode?.toString()) }
-            toB { Address address -> new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: address?.zipCode != null ? Integer.valueOf(address?.zipCode) : 0) }
+            toA { new Address(street: b?.streetParts?.join(STREET_PARTS_GLUE), zipCode: b?.zipCode?.toString()) }
+            toB { new AddressDTO(streetParts: a?.street?.split(STREET_PARTS_GLUE), zipCode: a?.zipCode != null ? Integer.valueOf(a?.zipCode) : 0) }
         }
             
         mapping { Person a, PersonDTO b ->
             field (a.phone, b.aPhone)
 
             field (a.name) {
-                toA { PersonDTO person -> person.firstName + NAME_GLUE + person.secondName }
+                toA { b.firstName + NAME_GLUE + b.secondName }
             }
 
             field(b.firstName) {
-                toB { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 0) }
+                toB { elementOrNull(a.name?.split(NAME_GLUE), 0) }
             }
 
             field(b.secondName) {
-                toB { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 1) }
+                toB { elementOrNull(a.name?.split(NAME_GLUE), 1) }
             }
         }
     }
