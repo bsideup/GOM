@@ -16,9 +16,7 @@ class GOM {
         }
 
         transformers.values().each {
-            it.values().each {
-                it.gom = this;
-            }
+            it.values()*.gom = this;
         }
     }
 
