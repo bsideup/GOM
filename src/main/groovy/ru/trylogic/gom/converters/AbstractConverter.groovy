@@ -1,11 +1,11 @@
 package ru.trylogic.gom.converters
 
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.transform.AbstractASTTransformUtil
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.dsl.MapperProcessor
 
@@ -23,6 +23,18 @@ abstract class AbstractConverter implements Converter {
         this.compilationUnit = compilationUnit;
         this.config = config;
         this.mapperProcessor = mapperProcessor;
+    }
+
+    boolean isList(ClassNode classNode) {
+        return classNode == ClassHelper.LIST_TYPE;
+    }
+
+    boolean isSet(ClassNode classNode) {
+        return classNode == ClassHelper.makeWithoutCaching(Set, false);
+    }
+
+    boolean isMap(ClassNode classNode) {
+        return classNode == ClassHelper.MAP_TYPE;
     }
 
     TernaryExpression nullSafe(Expression sourceFieldValue, Expression value) {

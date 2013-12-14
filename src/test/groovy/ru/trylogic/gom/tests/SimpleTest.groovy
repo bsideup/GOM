@@ -29,7 +29,7 @@ class SimpleTest extends Specification {
         person.addressNotes.put(person.address, currentAddressNote);
         person.favouriteAnimals = favouriteAnimals;
         
-        Person result = mapper.toA(person)
+        Person result = mapper.a(person)
 
         expect:
         result.phone == phone
@@ -64,7 +64,7 @@ class SimpleTest extends Specification {
         person.addressNotes.put(person.address, currentAddressNote);
         person.favouriteAnimals = favouriteAnimals;
         
-        PersonDTO result = mapper.toB(person)
+        PersonDTO result = mapper.b(person)
 
         expect:
         result.aPhone == phone

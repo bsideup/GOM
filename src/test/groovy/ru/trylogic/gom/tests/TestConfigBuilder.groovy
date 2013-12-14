@@ -15,18 +15,18 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
     
     {
         mapping(Address, AddressDTO) {
-            toA { AddressDTO address ->
+            a { AddressDTO address ->
                 new Address(street: address?.streetParts?.join(STREET_PARTS_GLUE), zipCode: address?.zipCode?.toString())
             }
             
-            toB { Address address ->
+            b { Address address ->
                 new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: address?.zipCode != null ? Integer.valueOf(address?.zipCode) : 0)
             }
         }
             
         mapping(Person, PersonDTO) {
             field ("phone", "aPhone")
-            
+
             field ("name") {
                 a { PersonDTO person -> person.firstName + NAME_GLUE + person.secondName }
             }

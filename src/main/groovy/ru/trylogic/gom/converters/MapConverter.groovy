@@ -1,20 +1,8 @@
 package ru.trylogic.gom.converters
 
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.InnerClassNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.VariableScope
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression
-import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.PropertyExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.ast.stmt.*
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -26,11 +14,7 @@ import static groovyjarjarasm.asm.Opcodes.*;
 class MapConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        if(!(isOrImplements(targetFieldType, ClassHelper.MAP_TYPE))) {
-            return false;
-        }
-
-        if(!isOrImplements(sourceFieldType, ClassHelper.MAP_TYPE)) {
+        if(!(isMap(targetFieldType) || isMap(sourceFieldType))) {
             return false;
         }
 
@@ -48,9 +32,8 @@ class MapConverter extends AbstractConverter {
             case ClassHelper.MAP_TYPE:
                 resultVariableType = ClassHelper.makeWithoutCaching(HashMap, false);
                 break;
-                break;
             default:
-                resultVariableType = targetFieldType;
+                resultVariableType = targetFieldType.getPlainNodeReference();
         }
 
         resultVariableType.usingGenerics = true;
@@ -71,14 +54,15 @@ class MapConverter extends AbstractConverter {
         
         def keyExpression = new PropertyExpression(new VariableExpression(iParameter), "key");
         keyExpression.type = entryType.genericsTypes.first().type;
-        def key = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[0].type, keyExpression)
-
         def valueExpression = new PropertyExpression(new VariableExpression(iParameter), "value");
-        def value = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[1].type, valueExpression)
-
-
-        def forBody = new ExpressionStatement(new MethodCallExpression(resultVariable, "put", new ArgumentListExpression(key, value)))
-        methodCode.statements << new ForStatement(iParameter, new MethodCallExpression(new VariableExpression(sourceParameter), "entrySet", EMPTY_ARGUMENTS), new BlockStatement([forBody], new VariableScope()));
+        methodCode.statements << new ForStatement(
+                iParameter,
+                new MethodCallExpression(new VariableExpression(sourceParameter), "entrySet", EMPTY_ARGUMENTS),
+                new ExpressionStatement(new MethodCallExpression(resultVariable, "put", new ArgumentListExpression(
+                        mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[0].type, keyExpression),
+                        mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[1].type, valueExpression)
+                )))
+        );
         methodCode.statements << new ReturnStatement(resultVariable);
 
         def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);

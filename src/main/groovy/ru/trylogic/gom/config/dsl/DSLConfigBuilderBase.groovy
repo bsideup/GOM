@@ -16,10 +16,10 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
             super(new GOMConfig.Mapping(a: a, b: b), spec)
         }
 
-        static class GOMFieldBuiler extends DSLBuilder<GOMConfig.Mapping.Field> {
+        static class GOMFieldBuiler extends DSLBuilder<GOMConfig.Field> {
 
             GOMFieldBuiler(String aName, String bName, Closure spec) {
-                super(new GOMConfig.Mapping.Field(aName: aName, bName: bName), spec)
+                super(new GOMConfig.Field(aName: aName, bName: bName), spec)
             }
 
             def a(cl) {
@@ -37,12 +37,12 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
             }
         }
         
-        def toA(cl) {
+        def a(cl) {
             result.toA = cl;
             check();
         }
         
-        def toB(cl) {
+        def b(cl) {
             result.toB = cl;
             check();
         }
@@ -51,11 +51,11 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
             field(aName, bName, null);
         }
 
-        def field(String name, @DelegatesTo(GOMFieldBuiler) Closure spec) {
+        def field(String name, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMFieldBuiler) Closure spec) {
             field(name, name, spec);
         }
 
-        def field(String aName, String bName, @DelegatesTo(GOMFieldBuiler) Closure spec) {
+        def field(String aName, String bName, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMFieldBuiler) Closure spec) {
             result.fields << new GOMFieldBuiler(aName, bName, spec).build();
             check();
         }
@@ -72,12 +72,12 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
         mapping(a, b, null);
     }
 
-    def mapping(Class a, Class b, @DelegatesTo(GOMMappingBuilder) Closure spec) {
+    def mapping(Class a, Class b, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMMappingBuilder) Closure spec) {
         def mapping = new GOMMappingBuilder(a, b, spec).build()
         result.mappings << mapping;
         
         result.mappings << new GOMConfig.Mapping(mapping.b, mapping.a, mapping.toB, mapping.toA, mapping.fields.collect {
-            new GOMConfig.Mapping.Field(it.bName, it.aName, it.b, it.a)
+            new GOMConfig.Field(it.bName, it.aName, it.b, it.a)
         }.toSet())
     }
     

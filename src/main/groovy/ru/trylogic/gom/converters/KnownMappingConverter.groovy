@@ -7,6 +7,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
+import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.dsl.MapperProcessor
 
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
@@ -28,6 +29,6 @@ class KnownMappingConverter extends AbstractConverter {
 
         def mapper = new MethodCallExpression(new PropertyExpression(THIS_EXPRESSION, GOM_FIELD_NAME), "getTransformer", new ArgumentListExpression(targetClassExpression, sourceClassExpression));
 
-        return new MethodCallExpression(mapper, MapperProcessor.Direction.A.toMethodName, new ArgumentListExpression(sourceFieldValue));
+        return new MethodCallExpression(mapper, GOMConfig.Direction.A.toMethodName, new ArgumentListExpression(sourceFieldValue));
     }
 }

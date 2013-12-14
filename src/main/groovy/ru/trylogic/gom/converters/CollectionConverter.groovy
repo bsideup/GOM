@@ -1,18 +1,8 @@
 package ru.trylogic.gom.converters
 
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.InnerClassNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression
-import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.codehaus.groovy.transform.AbstractASTTransformUtil
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
+import org.codehaus.groovy.ast.stmt.*
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -26,7 +16,7 @@ class CollectionConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
         
-        if(!(isIterable(sourceFieldType))) {
+        if(!(isList(sourceFieldType) || isSet(sourceFieldType))) {
             return false;
         }
 
@@ -35,18 +25,6 @@ class CollectionConverter extends AbstractConverter {
         }
         
         return isList(targetFieldType) || isSet(targetFieldType);
-    }
-
-    boolean isList(ClassNode classNode) {
-        return classNode == ClassHelper.LIST_TYPE;
-    }
-
-    boolean isSet(ClassNode classNode) {
-        return classNode == ClassHelper.makeWithoutCaching(Set, false);
-    }
-
-    boolean isIterable(ClassNode classNode) {
-        return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Iterable, false));
     }
 
     @Override
@@ -73,14 +51,15 @@ class CollectionConverter extends AbstractConverter {
         def methodCode = new BlockStatement();
         methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
 
-        def loopBlock = new BlockStatement();
+        def iParameter = new Parameter(sourceParameter.type.genericsTypes[0].type, '$item');
 
-        def iParameter = new Parameter(sourceParameter.type.genericsTypes.first().type, '$item');
+        def value = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[0].type, new VariableExpression(iParameter))
 
-        def value = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes.first().type, new VariableExpression(iParameter))
-
-        loopBlock.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value));
-        methodCode.statements << new ForStatement(iParameter, new VariableExpression(sourceParameter), loopBlock);
+        methodCode.statements << new ForStatement(
+                iParameter,
+                new VariableExpression(sourceParameter),
+                new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value))
+        );
         methodCode.statements << new ReturnStatement(resultVariable);
 
         def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);

@@ -14,6 +14,9 @@ import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.ProcessingUnit
 import org.codehaus.groovy.control.SourceUnit
 import ru.trylogic.gom.config.GOMConfig
+import ru.trylogic.gom.config.GOMConfig.Direction
+
+import static org.codehaus.groovy.ast.expr.VariableExpression.*;
 
 class DSLExecutor implements CompilationUnitAware {
 
@@ -52,12 +55,23 @@ class DSLExecutor implements CompilationUnitAware {
                 @Override
                 void visitMethodCallExpression(MethodCallExpression call) {
                     super.visitMethodCallExpression(call)
+                    
+                    if(call.objectExpression != THIS_EXPRESSION) {
+                        return;
+                    }
+
                     switch(call.methodAsString) {
-                        case "a":
-                        case "b":
-                        case "toA":
-                        case "toB":
+                        case Direction.A.toMethodName:
+                        case Direction.B.toMethodName:
                             def argumentsExpressions = (call.arguments as ArgumentListExpression)?.expressions
+                            
+                            if(argumentsExpressions == null) {
+                                break;
+                            }
+                            
+                            if(argumentsExpressions.size() == 0) {
+                                break;
+                            }
 
                             ClosureExpression cl = argumentsExpressions.get(0) as ClosureExpression;
 
@@ -67,9 +81,8 @@ class DSLExecutor implements CompilationUnitAware {
 
                             StringWriter writer = new StringWriter()
                             new AstNodeToScriptVisitor(writer).visitClosureExpression(cl);
-
-                            argumentsExpressions.clear();
-                            argumentsExpressions.add(new ConstantExpression(writer.toString()));
+                        
+                            call.arguments = new ConstantExpression(writer.toString())
                             break;
                         default:
                             return;

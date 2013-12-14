@@ -7,6 +7,7 @@ abstract class DSLBuilder<TYPE> {
         this.result = result
         if(spec) {
             spec.delegate = this;
+            spec.resolveStrategy = Closure.DELEGATE_FIRST;
             spec.call();
         }
     }

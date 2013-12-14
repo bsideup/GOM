@@ -9,8 +9,9 @@ import org.codehaus.groovy.control.CompilationUnit
 import ru.trylogic.gom.GOM
 import ru.trylogic.gom.Transformer
 import ru.trylogic.gom.config.GOMConfig
+import ru.trylogic.gom.config.GOMConfig.Direction
 import ru.trylogic.gom.config.GOMConfig.Mapping
-import ru.trylogic.gom.config.GOMConfig.Mapping.Field
+import ru.trylogic.gom.config.GOMConfig.Field
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -23,47 +24,6 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     public static final String VALUE_OF = "valueOf"
     public static final String TO_STRING = "toString"
     public static final String GOM_FIELD_NAME = "gom"
-    static enum Direction {
-        A("toA"),
-        B("toB")
-        
-        String toMethodName;
-
-        Direction(String toMethodName) {
-            this.toMethodName = toMethodName
-        }
-
-        String getFieldConverterName(Field field) {
-            return ab(field.aName, field.bName)  + "From" + this.name();
-        }
-        
-        String getFieldConverterCode(Field field) {
-            return ab(field?.a, field?.b);
-        }
-        
-        String toMethodCode(Mapping mapping) {
-            return ab(mapping.toA, mapping.toB);
-        }
-
-        String getTargetFieldName(Field field) {
-            return ab(field?.bName, field?.aName);
-        }
-
-        String getSourceFieldName(Field field) {
-            return ab(field?.aName, field?.bName);
-        }
-        
-        def <T> T ab(T a, T b) {
-            switch(this) {
-                case A:
-                    return a;
-                case B:
-                    return b;
-                default:
-                    throw new Exception("unreachable");
-            }
-        }
-    }
     
     CompilationUnit compilationUnit;
     
