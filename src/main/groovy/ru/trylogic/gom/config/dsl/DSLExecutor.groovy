@@ -5,7 +5,9 @@ import groovy.transform.CompilationUnitAware
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
@@ -61,8 +63,37 @@ class DSLExecutor implements CompilationUnitAware {
                     }
 
                     switch(call.methodAsString) {
-                        case Direction.A.toMethodName:
-                        case Direction.B.toMethodName:
+                        case "mapping":
+                            ArgumentListExpression arguments = call.arguments as ArgumentListExpression;
+                        
+                            def closure = arguments.expressions.get(0) as ClosureExpression;
+                            
+                            if(closure.parameters.size() != 2) {
+                                throw new Exception("Mapping closure should have 2 parameters!");
+                            }
+
+                            if(closure.parameters[0].name != Direction.A.parameterName) {
+                                throw new Exception("Mapping closure first parameter name shold be '${Direction.A.parameterName}'");
+                            }
+
+                            if(closure.parameters[1].name != Direction.B.parameterName) {
+                                throw new Exception("Mapping closure second parameter name shold be '${Direction.b.parameterName}'");
+                            }
+                        
+                            def newArguments = new ArgumentListExpression();
+
+                            newArguments.expressions << new ClassExpression(closure.parameters[0].originType)
+                            newArguments.expressions << new ClassExpression(closure.parameters[1].originType)
+                            newArguments.expressions << closure
+                        
+                            call.method = new ConstantExpression("doMapping");
+                            call.arguments = newArguments;
+                        
+                            closure.parameters*.initialExpression = new ConstantExpression(null);
+                        
+                            break;
+                        case "toA":
+                        case "toB":
                             def argumentsExpressions = (call.arguments as ArgumentListExpression)?.expressions
                             
                             if(argumentsExpressions == null) {

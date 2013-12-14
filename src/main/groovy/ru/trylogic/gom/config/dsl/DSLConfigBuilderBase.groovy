@@ -22,11 +22,11 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
                 super(new GOMConfig.Field(aName: aName, bName: bName), spec)
             }
 
-            def a(cl) {
+            def toA(cl) {
                 result.a = cl;
             }
 
-            def b(cl) {
+            def toB(cl) {
                 result.b = cl;
             }
         }
@@ -37,12 +37,12 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
             }
         }
         
-        def a(cl) {
+        def toA(cl) {
             result.toA = cl;
             check();
         }
         
-        def b(cl) {
+        def toB(cl) {
             result.toB = cl;
             check();
         }
@@ -68,17 +68,17 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
         return result;
     }
 
-    def mapping(Class a, Class b) {
-        mapping(a, b, null);
-    }
-
-    def mapping(Class a, Class b, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMMappingBuilder) Closure spec) {
+    @Deprecated
+    protected def doMapping(Class a, Class b, @DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMMappingBuilder) Closure spec) {
         def mapping = new GOMMappingBuilder(a, b, spec).build()
         result.mappings << mapping;
-        
+
         result.mappings << new GOMConfig.Mapping(mapping.b, mapping.a, mapping.toB, mapping.toA, mapping.fields.collect {
             new GOMConfig.Field(it.bName, it.aName, it.b, it.a)
         }.toSet())
+    }
+
+    def mapping(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMMappingBuilder) Closure spec) {
     }
     
 }

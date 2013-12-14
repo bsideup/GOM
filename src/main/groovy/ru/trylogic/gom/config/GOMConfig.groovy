@@ -52,12 +52,14 @@ class GOMConfig {
     }
 
     static enum Direction {
-        A("a"),
-        B("b")
+        A("a", "a"),
+        B("b", "b")
 
+        String parameterName;
         String toMethodName;
 
-        Direction(String toMethodName) {
+        Direction(String parameterName, String toMethodName) {
+            this.parameterName = parameterName;
             this.toMethodName = toMethodName
         }
 

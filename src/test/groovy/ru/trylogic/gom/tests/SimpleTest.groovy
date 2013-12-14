@@ -36,8 +36,8 @@ class SimpleTest extends Specification {
         result.age == age.toString()
         result.sex == Sex.valueOf(Sex, sex.name())
         result.name == firstName + TestConfigBuilder.NAME_GLUE + secondName
-        result.address?.zipCode == zipCode.toString()
-        result.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
+        //result.address?.zipCode == zipCode.toString()
+        //result.address?.street == streetParts.join(TestConfigBuilder.STREET_PARTS_GLUE)
         
         result.friends != null
         result.friends.size() == 1
@@ -72,8 +72,8 @@ class SimpleTest extends Specification {
         result.sex == SexDTO.valueOf(SexDTO, sex.name())
         result.firstName == name.split(TestConfigBuilder.NAME_GLUE)[0]
         result.secondName == name.split(TestConfigBuilder.NAME_GLUE)[1]
-        result.address?.zipCode == zipCode.toInteger()
-        result.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
+        //result.address?.zipCode == zipCode.toInteger()
+        //result.address?.streetParts == street.split(TestConfigBuilder.STREET_PARTS_GLUE)
         
         result.friends != null
         result.friends.size() == 1

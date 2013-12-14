@@ -14,29 +14,24 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
     public static final String NAME_GLUE = " ";
     
     {
-        mapping(Address, AddressDTO) {
-            a { AddressDTO address ->
-                new Address(street: address?.streetParts?.join(STREET_PARTS_GLUE), zipCode: address?.zipCode?.toString())
-            }
-            
-            b { Address address ->
-                new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: address?.zipCode != null ? Integer.valueOf(address?.zipCode) : 0)
-            }
+        mapping { Address a, AddressDTO b ->
+            toA { AddressDTO address -> new Address(street: address?.streetParts?.join(STREET_PARTS_GLUE), zipCode: address?.zipCode?.toString()) }
+            toB { Address address -> new AddressDTO(streetParts: address?.street?.split(STREET_PARTS_GLUE), zipCode: address?.zipCode != null ? Integer.valueOf(address?.zipCode) : 0) }
         }
             
-        mapping(Person, PersonDTO) {
+        mapping { Person a, PersonDTO b ->
             field ("phone", "aPhone")
 
             field ("name") {
-                a { PersonDTO person -> person.firstName + NAME_GLUE + person.secondName }
+                toA { PersonDTO person -> person.firstName + NAME_GLUE + person.secondName }
             }
 
             field("firstName") {
-                b { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 0) }
+                toB { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 0) }
             }
 
             field("secondName") {
-                b { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 1) }
+                toB { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 1) }
             }
         }
     }
