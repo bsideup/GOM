@@ -122,6 +122,7 @@ class DslPreparator extends CodeVisitorSupport {
                     break;
                 }
 
+                cl.parameters = [new Parameter(ClassHelper.OBJECT_TYPE, call.methodAsString == "toA" ? "b" : "a")] as Parameter[];
                 StringWriter writer = new StringWriter()
                 new AstNodeToScriptVisitor(writer).visitClosureExpression(cl);
 
