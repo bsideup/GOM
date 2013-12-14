@@ -20,17 +20,17 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
         }
             
         mapping { Person a, PersonDTO b ->
-            field ("phone", "aPhone")
+            field (a.phone, b.aPhone)
 
-            field ("name") {
+            field (a.name) {
                 toA { PersonDTO person -> person.firstName + NAME_GLUE + person.secondName }
             }
 
-            field("firstName") {
+            field(b.firstName) {
                 toB { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 0) }
             }
 
-            field("secondName") {
+            field(b.secondName) {
                 toB { Person person -> elementOrNull(person.name?.split(NAME_GLUE), 1) }
             }
         }

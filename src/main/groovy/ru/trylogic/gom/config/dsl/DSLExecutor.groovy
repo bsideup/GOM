@@ -10,7 +10,10 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.ProcessingUnit
@@ -91,6 +94,54 @@ class DSLExecutor implements CompilationUnitAware {
                         
                             closure.parameters*.initialExpression = new ConstantExpression(null);
                         
+                            break;
+                        case "field":
+                            def arguments = call.arguments as ArgumentListExpression;
+                            
+                            if(arguments == null) {
+                                throw new Exception("Field should have arguments");
+                            }
+                        
+                            if(arguments.expressions.size() != 1 && arguments.expressions.size() != 2 ) {
+                                throw new Exception("Field arguments size should be 1 or 2");
+                            }
+                        
+                            ArgumentListExpression newArguments = new ArgumentListExpression();
+                            
+                            def closure = null;
+                            if(arguments.expressions.last() instanceof ClosureExpression) {
+                                closure = arguments.expressions.pop();
+                            }
+                            
+                            arguments.expressions.eachWithIndex { Expression it, int index ->
+                                if(!(it instanceof PropertyExpression)) {
+                                    throw new Exception("Field argument should be PropertyExpression");
+                                }
+                                
+                                def prop = it as PropertyExpression;
+                                
+                                if(!(prop.objectExpression instanceof VariableExpression)) {
+                                    throw new Exception("Field argument property source should be one of mapping arguments");
+                                }
+                                
+                                def var = prop.objectExpression as VariableExpression;
+                                
+                                if(arguments.expressions.size() == 2) {
+                                    if(var.name != Direction.values()[index].parameterName) {
+                                        throw new Exception("Field arguments should have order of mapping arguments")
+                                    }
+                                } else {
+                                    if(!Direction.values().any {it.parameterName == var.name}) {
+                                        throw new Exception("Field argument should reference mapping argument");
+                                    }
+                                }
+
+                                newArguments.expressions.add(prop.property);
+                            }
+                            if(closure != null) {
+                                newArguments.expressions.add(closure);
+                            }
+                            call.arguments = newArguments;
                             break;
                         case "toA":
                         case "toB":
