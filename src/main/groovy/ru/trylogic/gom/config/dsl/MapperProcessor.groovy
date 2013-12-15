@@ -31,12 +31,16 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     CompilationUnit compilationUnit;
     
     GOMConfig config;
+    
+    List<Converter> converters;
 
     MapperProcessor(CompilationUnit compilationUnit, GOMConfig config) {
         this.compilationUnit = compilationUnit
         this.config = config
+        
+        converters = config.converters*.newInstance();
 
-        config.converters*.init(compilationUnit, config, this);
+        converters*.init(compilationUnit, config, this);
     }
 
     Set<InnerClassNode> process(ClassNode classNode) {
@@ -153,6 +157,6 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         //TODO warn about no mapping
-        return config.converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
+        return converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
     }
 }

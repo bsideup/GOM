@@ -102,15 +102,15 @@ class GOMConfig {
     
     Set<Mapping> mappings;
 
-    List<Converter> converters = [
-            new KnownMappingConverter(),
-            new DerivedMatchConverter(),
-            new MapConverter(),
-            new CollectionConverter(),
-            new EnumConverter(),
-            new PrimitiveConverter(),
-            new StringConverter()
-    ] as List<Converter>
+    List<Class<? extends Converter>> converters = [
+            KnownMappingConverter,
+            DerivedMatchConverter,
+            MapConverter,
+            CollectionConverter,
+            EnumConverter,
+            PrimitiveConverter,
+            StringConverter
+    ] as List<Class<? extends Converter>>;
 
     GOMConfig() {
         this(new HashSet<Mapping>())
