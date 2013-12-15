@@ -94,7 +94,7 @@ class SimpleTest extends Specification {
 
         where:
         name         | age  | sex      | phone | street             | zipCode     | friends                          | currentAddressNote | favouriteAnimals
-        "John Smith" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack Jones")] | "Great flat!"      | new HashSet<String>(["cat", "panda"])
+        "John Smith" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack Jones")] | "Great flat!"      | ["cat", "panda"].toSet()
     }
 
 
