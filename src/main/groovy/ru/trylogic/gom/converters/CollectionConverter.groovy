@@ -3,6 +3,8 @@ package ru.trylogic.gom.converters
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.tools.GenericsUtils
+import org.codehaus.groovy.ast.tools.WideningCategories
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -15,16 +17,7 @@ class CollectionConverter extends AbstractConverter {
 
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        
-        if(!(isList(sourceFieldType) || isSet(sourceFieldType))) {
-            return false;
-        }
-
-        if(sourceFieldType.genericsTypes?.size() != 1) {
-            return false;
-        }
-        
-        return isList(targetFieldType) || isSet(targetFieldType);
+        return isCollection(targetFieldType) && isCollection(sourceFieldType);
     }
 
     @Override
@@ -41,19 +34,22 @@ class CollectionConverter extends AbstractConverter {
                 resultVariableType = targetFieldType.getPlainNodeReference();
         }
 
-        resultVariableType.usingGenerics = true;
+        resultVariableType.usingGenerics = targetFieldType.usingGenerics;
         resultVariableType.genericsTypes = targetFieldType.genericsTypes
 
-        def resultVariable = new VariableExpression('$result', resultVariableType)
+        def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Collection, false));
+        def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Collection, false));
 
+        def resultVariable = new VariableExpression('$result', resultVariableType)
+        
         Parameter sourceParameter = new Parameter(sourceFieldValue.type, '$source')
 
         def methodCode = new BlockStatement();
         methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
 
-        def iParameter = new Parameter(sourceParameter.type.genericsTypes[0].type, '$item');
+        def iParameter = new Parameter(parameterizeSourceFieldType.genericsTypes[0].type, '$item');
 
-        def value = mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[0].type, new VariableExpression(iParameter))
+        def value = mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, new VariableExpression(iParameter))
 
         methodCode.statements << new ForStatement(
                 iParameter,

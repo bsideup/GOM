@@ -9,7 +9,7 @@ import org.codehaus.groovy.control.CompilationUnit
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.dsl.MapperProcessor
 
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.notNullExpr
+import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*
 
 abstract class AbstractConverter implements Converter {
     
@@ -26,11 +26,15 @@ abstract class AbstractConverter implements Converter {
     }
 
     boolean isList(ClassNode classNode) {
-        return classNode == ClassHelper.LIST_TYPE;
+        return isOrImplements(classNode, ClassHelper.LIST_TYPE);
     }
 
     boolean isSet(ClassNode classNode) {
-        return classNode == ClassHelper.makeWithoutCaching(Set, false);
+        return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Set, false));
+    }
+    
+    boolean isCollection(ClassNode classNode) {
+        return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Collection, false));
     }
 
     boolean isMap(ClassNode classNode) {

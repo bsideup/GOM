@@ -16,6 +16,15 @@ class PersonDTO {
         int zipCode
     }
     
+    static class FriendsList extends ArrayList<PersonDTO> {
+        FriendsList() {
+        }
+
+        FriendsList(Collection<? extends PersonDTO> personDTOs) {
+            super(personDTOs)
+        }
+    }
+    
     String firstName;
     
     String secondName;
@@ -27,8 +36,8 @@ class PersonDTO {
     SexDTO sex;
     
     AddressDTO address;
-    
-    List<PersonDTO> friends;
+
+    FriendsList friends;
 
     Map<AddressDTO, String> addressNotes;
 
