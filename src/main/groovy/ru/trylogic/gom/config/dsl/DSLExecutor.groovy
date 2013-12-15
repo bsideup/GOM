@@ -1,6 +1,7 @@
 package ru.trylogic.gom.config.dsl
 
 import groovy.transform.CompilationUnitAware
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
@@ -23,10 +24,10 @@ class DSLExecutor implements CompilationUnitAware {
         CompilationUnit unit = new CompilationUnit(compilationUnit.configuration, null, gcl);
 
         SourceUnit su = null;
-        compilationUnit.sources.each {
-            GroovyCodeSource src = new GroovyCodeSource(new File(it.value.name));
+        compilationUnit.each { SourceUnit it ->
+            GroovyCodeSource src = new GroovyCodeSource(new File(it.name));
             def sourceUnit = unit.addSource(src.name, src.scriptText);
-            if(it.value.name.equalsIgnoreCase(source.name)) {
+            if(it.name.equalsIgnoreCase(source.name)) {
                 su = sourceUnit;
             }
         }

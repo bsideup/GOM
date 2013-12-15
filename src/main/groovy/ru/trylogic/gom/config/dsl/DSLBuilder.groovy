@@ -1,5 +1,8 @@
 package ru.trylogic.gom.config.dsl
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 abstract class DSLBuilder<TYPE> {
     TYPE result;
 

@@ -2,6 +2,7 @@ package ru.trylogic.gom.config.dsl
 
 import groovy.inspect.swingui.AstNodeToScriptVisitor
 import groovy.transform.CompilationUnitAware
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
@@ -17,6 +18,7 @@ import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
 import static groovyjarjarasm.asm.Opcodes.*
 
+@CompileStatic
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class DSLConfigBuilderTransformation implements ASTTransformation, CompilationUnitAware {
 
@@ -57,7 +59,7 @@ public class DSLConfigBuilderTransformation implements ASTTransformation, Compil
 
         methodBody.statements << declStatement(resultVariable, new ConstructorCallExpression(resultClassNode, EMPTY_ARGUMENTS))
 
-        transformers.each {
+        transformers.each { InnerClassNode it ->
             it.enclosingMethod = methodNode;
             methodBody.statements << new ExpressionStatement(new MethodCallExpression(resultVariable, "add", new ConstructorCallExpression(it, EMPTY_ARGUMENTS)));
         }

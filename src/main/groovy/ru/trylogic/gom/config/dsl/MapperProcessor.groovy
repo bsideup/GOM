@@ -1,6 +1,7 @@
 package ru.trylogic.gom.config.dsl
 
 import groovy.transform.CompilationUnitAware
+import groovy.transform.CompileStatic
 import groovyjarjarasm.asm.Opcodes
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
@@ -12,6 +13,7 @@ import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.GOMConfig.Direction
 import ru.trylogic.gom.config.GOMConfig.Mapping
 import ru.trylogic.gom.config.GOMConfig.Field
+import ru.trylogic.gom.converters.Converter
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -19,6 +21,7 @@ import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENT
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
+@CompileStatic
 class MapperProcessor implements CompilationUnitAware, Opcodes {
 
     public static final String VALUE_OF = "valueOf"
@@ -37,7 +40,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     }
 
     Set<InnerClassNode> process(ClassNode classNode) {
-        return config.mappings.collect { processMapping(classNode, it) }
+        return config.mappings.collect { Mapping it -> processMapping(classNode, it) }.toSet()
     }
     
     InnerClassNode processMapping(ClassNode classNode, Mapping mapping) {
@@ -48,7 +51,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
             counter++;
             className = classNode.getName() + '$' + counter
 
-            if (!classNode.innerClasses.any { it.name.equalsIgnoreCase(className) }) {
+            if (!classNode.innerClasses.any { InnerClassNode it -> it.name.equalsIgnoreCase(className) }) {
                 break;
             }
         }
@@ -95,12 +98,19 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
 
         def sourceParameter = new Parameter(sourceClassNode, '$source')
         
-        methodBody.statements << new IfStatement(equalsNullExpr(new VariableExpression(sourceParameter)), new BlockStatement([new ReturnStatement(new ConstantExpression(null))], new VariableScope()), new EmptyStatement());
+        methodBody.statements << new IfStatement(
+                equalsNullExpr(new VariableExpression(sourceParameter)),
+                new BlockStatement(
+                        [new ReturnStatement(new ConstantExpression(null))] as List<Statement>,
+                        new VariableScope()
+                ),
+                new EmptyStatement()
+        );
         
         def targetVariable = new VariableExpression('$result', targetClassNode)
         methodBody.statements << declStatement(targetVariable, new ConstructorCallExpression(targetClassNode, EMPTY_ARGUMENTS));
 
-        targetClassNode.fields.each { targetField ->
+        targetClassNode.fields.each { FieldNode targetField ->
             if((targetField.modifiers & ACC_SYNTHETIC) ) {
                 return;
             }
@@ -121,7 +131,7 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     }
     
     Expression generateFieldAssign(Direction direction, Mapping mapping, InnerClassNode mapperClassNode, ClassNode targetClassNode, ClassNode sourceClassNode, FieldNode targetField, Parameter sourceParameter) {
-        Field fieldConfig = mapping.fields?.find { direction.getSourceFieldName(it) == targetField.name }
+        Field fieldConfig = mapping.fields?.find { Field it -> direction.getSourceFieldName(it) == targetField.name }
         String sourceFieldConverterCode = direction.getFieldConverterCode(fieldConfig);
         if(sourceFieldConverterCode != null) {
             def closure = new ClosureCompiler(compilationUnit).compile(sourceFieldConverterCode);
@@ -146,6 +156,6 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         //TODO warn about no mapping
-        return config.converters.find {it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
+        return config.converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
     }
 }

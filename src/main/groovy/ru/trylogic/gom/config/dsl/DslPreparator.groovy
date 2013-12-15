@@ -1,6 +1,7 @@
 package ru.trylogic.gom.config.dsl
 
 import groovy.inspect.swingui.AstNodeToScriptVisitor
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.Parameter
@@ -16,6 +17,7 @@ import ru.trylogic.gom.config.GOMConfig
 
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION
 
+@CompileStatic
 class DslPreparator extends CodeVisitorSupport {
 
     @Override
@@ -41,7 +43,7 @@ class DslPreparator extends CodeVisitorSupport {
                 }
 
                 if(closure.parameters[1].name != GOMConfig.Direction.B.parameterName) {
-                    throw new Exception("Mapping closure second parameter name shold be '${GOMConfig.Direction.b.parameterName}'");
+                    throw new Exception("Mapping closure second parameter name shold be '${GOMConfig.Direction.B.parameterName}'");
                 }
 
                 def newArguments = new ArgumentListExpression();
@@ -53,7 +55,7 @@ class DslPreparator extends CodeVisitorSupport {
                 call.method = new ConstantExpression("doMapping");
                 call.arguments = newArguments;
 
-                closure.parameters*.initialExpression = new ConstantExpression(null);
+                closure.parameters*.initialExpression = (Expression) new ConstantExpression(null);
 
                 break;
             case "field":
@@ -69,17 +71,17 @@ class DslPreparator extends CodeVisitorSupport {
 
                 ArgumentListExpression newArguments = new ArgumentListExpression();
 
-                def closure = null;
+                ClosureExpression closure = null;
                 if(arguments.expressions.last() instanceof ClosureExpression) {
-                    closure = arguments.expressions.pop();
+                    closure = arguments.expressions.pop() as ClosureExpression;
                 }
 
-                arguments.expressions.eachWithIndex { Expression it, int index ->
-                    if(!(it instanceof PropertyExpression)) {
+                arguments.expressions.eachWithIndex { Expression expression, int index ->
+                    if(!(expression instanceof PropertyExpression)) {
                         throw new Exception("Field argument should be PropertyExpression");
                     }
 
-                    def prop = it as PropertyExpression;
+                    def prop = expression as PropertyExpression;
 
                     if(!(prop.objectExpression instanceof VariableExpression)) {
                         throw new Exception("Field argument property source should be one of mapping arguments");
@@ -92,15 +94,15 @@ class DslPreparator extends CodeVisitorSupport {
                             throw new Exception("Field arguments should have order of mapping arguments")
                         }
                     } else {
-                        if(!GOMConfig.Direction.values().any {it.parameterName == var.name}) {
+                        if(!GOMConfig.Direction.values().any {GOMConfig.Direction direction -> direction.parameterName == var.name}) {
                             throw new Exception("Field argument should reference mapping argument");
                         }
                     }
 
-                    newArguments.expressions.add(prop.property);
+                    newArguments.expressions << prop.property;
                 }
                 if(closure != null) {
-                    newArguments.expressions.add(closure);
+                    newArguments.expressions << closure;
                 }
                 call.arguments = newArguments;
                 break;
@@ -122,9 +124,12 @@ class DslPreparator extends CodeVisitorSupport {
                     break;
                 }
 
-                cl.parameters = [new Parameter(ClassHelper.OBJECT_TYPE, call.methodAsString == "toA" ? "b" : "a")] as Parameter[];
+                def resultClosure = new ClosureExpression([new Parameter(ClassHelper.OBJECT_TYPE, call.methodAsString == "toA" ? "b" : "a")] as Parameter[], cl.code);
+                
+                argumentsExpressions.set(0, resultClosure);
+                
                 StringWriter writer = new StringWriter()
-                new AstNodeToScriptVisitor(writer).visitClosureExpression(cl);
+                new AstNodeToScriptVisitor(writer).visitClosureExpression(resultClosure);
 
                 call.arguments = new ConstantExpression(writer.toString())
                 break;
