@@ -59,13 +59,13 @@ class SimpleTest extends Specification {
         compare(result.friends, friends, friendsCompareCLosure)
         
         result.addressNotes.keySet().first() == result.address
-        result.addressNotes.get(result.address) == currentAddressNote
+        compare(result.addressNotes.values(), [currentAddressNote])
 
         compare(result.favouriteAnimals, favouriteAnimals)
 
         where:
         firstName | secondName | age | sex           | aPhone | streetParts               | zipCode | friends                            | currentAddressNote | favouriteAnimals
-        "John"    | "Smith"    | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(firstName: "Jack")] | "Great flat!"      | ["cat", "panda"]
+        "John"    | "Smith"    | 18  | SexDTO.MALE   | "911"  | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(firstName: "Jack")] | "Great flat!"      | ["cat", "panda"]
     }
 
     def "test to b"(){
@@ -88,7 +88,7 @@ class SimpleTest extends Specification {
         compare(result.friends, friends, { Person toElement, PersonDTO sourceElement -> friendsCompareCLosure(sourceElement, toElement) })
 
         result.addressNotes.keySet().first() == result.address
-        result.addressNotes.get(result.address) == currentAddressNote
+        compare(result.addressNotes.values(), [currentAddressNote])
 
         compare(result.favouriteAnimals, favouriteAnimals)
 
