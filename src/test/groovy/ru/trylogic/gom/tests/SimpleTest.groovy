@@ -25,7 +25,7 @@ class SimpleTest extends Specification {
     def "test to a"(){
 
         def person = new PersonDTO(firstName: firstName, secondName: secondName, sex: sex, age: age, aPhone: phone, address: new AddressDTO(streetParts: streetParts, zipCode: zipCode), friends: friends)
-        person.addressNotes = new HashMap<>();
+        person.addressNotes = new PersonDTO.AddressNotes();
         person.addressNotes.put(person.address, currentAddressNote);
         person.favouriteAnimals = favouriteAnimals;
         
