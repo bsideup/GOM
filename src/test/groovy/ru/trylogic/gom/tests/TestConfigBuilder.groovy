@@ -15,8 +15,8 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
     
     {
         mapping { Address a, AddressDTO b ->
-            toA { new Address(street: b?.streetParts?.join(STREET_PARTS_GLUE), zipCode: b?.zipCode?.toString()) }
-            toB { new AddressDTO(streetParts: a?.street?.split(STREET_PARTS_GLUE), zipCode: a?.zipCode != null ? Integer.valueOf(a?.zipCode) : 0) }
+            toA { new Address(b?.zipCode?.toString(), b?.streetParts?.join(STREET_PARTS_GLUE)) }
+            toB { new AddressDTO(a?.street?.split(STREET_PARTS_GLUE)?.toList(), a?.zipCode != null ? Integer.valueOf(a?.zipCode) : 0) }
         }
             
         mapping { Person a, PersonDTO b ->

@@ -1,7 +1,9 @@
 package ru.trylogic.gom.tests.data
 
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.TupleConstructor
 
+@TupleConstructor
 class Person {
 
     static enum Sex {
@@ -10,6 +12,7 @@ class Person {
     }
     
     @EqualsAndHashCode
+    @TupleConstructor
     static class Address {
         String zipCode;
         
