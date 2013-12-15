@@ -52,33 +52,20 @@ class MapConverter extends AbstractConverter {
         def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Map, false));
         def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Map, false));
 
-        def resultVariable = new VariableExpression('$result', resultVariableType)
+        def keyExpression = (Expression) macro {$entry.key}
+        keyExpression.type = parameterizeSourceFieldType.genericsTypes.first().type;
 
-        Parameter sourceParameter = new Parameter(sourceFieldValue.type, '$source')
+        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariableType, [new Parameter(sourceFieldValue.type, '$source')] as Parameter[], null, (Statement) macro {
+            def $result = $v{new ConstructorCallExpression(resultVariableType, EMPTY_ARGUMENTS)};
 
-        def methodCode = new BlockStatement();
-        methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
-
-        def entryType = ClassHelper.makeWithoutCaching(Map.Entry, false);
-        entryType.usingGenerics = true;
-        entryType.genericsTypes = parameterizeSourceFieldType.genericsTypes;
-        
-        def iParameter = new Parameter(entryType, '$entry');
-        
-        def keyExpression = new PropertyExpression(new VariableExpression(iParameter), "key");
-        keyExpression.type = entryType.genericsTypes.first().type;
-        def valueExpression = new PropertyExpression(new VariableExpression(iParameter), "value");
-        methodCode.statements << new ForStatement(
-                iParameter,
-                new MethodCallExpression(new VariableExpression(sourceParameter), "entrySet", EMPTY_ARGUMENTS),
-                new ExpressionStatement(new MethodCallExpression(resultVariable, "put", new ArgumentListExpression(
-                        mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, keyExpression),
-                        mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[1].type, valueExpression)
-                )))
-        );
-        methodCode.statements << new ReturnStatement(resultVariable);
-
-        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);
+            for($entry in $source.entrySet()) {
+                $result.put(
+                        $v{mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, keyExpression)},
+                        $v{mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[1].type, (Expression) macro {$entry.value})}
+                )
+            }
+            return $result;
+        });
         return nullSafe(sourceFieldValue, new MethodCallExpression(THIS_EXPRESSION, method.name, sourceFieldValue));
     }
 }

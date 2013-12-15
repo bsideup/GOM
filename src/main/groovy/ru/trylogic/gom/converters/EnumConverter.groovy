@@ -39,6 +39,9 @@ class EnumConverter extends AbstractConverter {
         if(enumKey == null) {
             return null;
         }
-        return nullSafe(sourceFieldValue, new StaticMethodCallExpression(targetFieldType, VALUE_OF, new ArgumentListExpression(new ClassExpression(targetFieldType), enumKey)));
+        
+        return nullSafe(sourceFieldValue, (Expression) macro {
+            $v{new ClassExpression(targetFieldType)}.valueOf($v{new ClassExpression(targetFieldType)}, $v{enumKey})
+        });
     }
 }

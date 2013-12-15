@@ -62,25 +62,16 @@ class CollectionConverter extends AbstractConverter {
         def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Iterable, false));
         def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Iterable, false));
 
-        def resultVariable = new VariableExpression('$result', resultVariableType)
-        
         Parameter sourceParameter = new Parameter(sourceFieldValue.type, '$source')
 
-        def methodCode = new BlockStatement();
-        methodCode.statements << declStatement(resultVariable, new ConstructorCallExpression(resultVariable.originType, EMPTY_ARGUMENTS));
+        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariableType, [sourceParameter] as Parameter[], null, (Statement) macro {
+            def $result = $v{new ConstructorCallExpression(resultVariableType, EMPTY_ARGUMENTS)};
+            for($item in $v{new VariableExpression(sourceParameter)}) {
+                $result.add($v{mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, new VariableExpression('$item', parameterizeSourceFieldType.genericsTypes[0].type))})
+            }
 
-        def iParameter = new Parameter(parameterizeSourceFieldType.genericsTypes[0].type, '$item');
-
-        def value = mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, new VariableExpression(iParameter))
-
-        methodCode.statements << new ForStatement(
-                iParameter,
-                new VariableExpression(sourceParameter),
-                new ExpressionStatement(new MethodCallExpression(resultVariable, "add", value))
-        );
-        methodCode.statements << new ReturnStatement(resultVariable);
-
-        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariable.originType, [sourceParameter] as Parameter[], null, methodCode);
+            return $result
+        });
         return nullSafe(sourceFieldValue, new MethodCallExpression(THIS_EXPRESSION, method.name, sourceFieldValue));
     }
 }
