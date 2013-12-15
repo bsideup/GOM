@@ -1,9 +1,11 @@
 package ru.trylogic.gom.converters
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.expr.Expression
 
+@CompileStatic
 class DerivedMatchConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {

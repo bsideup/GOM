@@ -1,5 +1,6 @@
 package ru.trylogic.gom.converters
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
@@ -9,6 +10,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 
 import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 
+@CompileStatic
 class PrimitiveConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {

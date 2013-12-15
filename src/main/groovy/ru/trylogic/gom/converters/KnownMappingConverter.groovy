@@ -1,5 +1,6 @@
 package ru.trylogic.gom.converters
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -14,10 +15,11 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 
 import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 
+@CompileStatic
 class KnownMappingConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        return config.mappings.any { it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldType.name)}
+        return config.mappings.any { GOMConfig.Mapping it -> it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldType.name)}
     }
 
     @Override

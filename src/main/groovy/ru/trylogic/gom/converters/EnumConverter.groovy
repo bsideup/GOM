@@ -1,5 +1,6 @@
 package ru.trylogic.gom.converters
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
@@ -13,6 +14,7 @@ import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENT
 
 import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 
+@CompileStatic
 class EnumConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
@@ -23,7 +25,7 @@ class EnumConverter extends AbstractConverter {
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         Expression enumKey = null;
         switch(sourceFieldValue.type) {
-            case {it.enum}:
+            case {ClassNode it -> it.enum}:
                 enumKey = new MethodCallExpression(sourceFieldValue, "name", EMPTY_ARGUMENTS);
                 break;
             case ClassHelper.STRING_TYPE:

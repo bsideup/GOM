@@ -1,5 +1,6 @@
 package ru.trylogic.gom.converters
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
@@ -11,6 +12,7 @@ import ru.trylogic.gom.config.dsl.MapperProcessor
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*
 
+@CompileStatic
 abstract class AbstractConverter implements Converter {
     
     CompilationUnit compilationUnit;

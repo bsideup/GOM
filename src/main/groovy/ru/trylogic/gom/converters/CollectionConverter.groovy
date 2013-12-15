@@ -1,5 +1,6 @@
 package ru.trylogic.gom.converters
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
@@ -12,6 +13,7 @@ import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 
 import static groovyjarjarasm.asm.Opcodes.*;
 
+@CompileStatic
 class CollectionConverter extends AbstractConverter {
 
     @Override
