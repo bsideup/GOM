@@ -50,5 +50,5 @@ class PersonDTO {
 
     AddressNotes addressNotes;
 
-    Set<String> favouriteAnimals;
+    List<String> favouriteAnimals;
 }
