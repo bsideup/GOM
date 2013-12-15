@@ -37,14 +37,6 @@ class TestConfigBuilder extends DSLConfigBuilderBase {
     }
     
     static <T> T elementOrNull(T[] elements, int index) {
-        if(elements == null) {
-            return null;
-        }
-        
-        if(elements.size() <= index) {
-            return null;
-        }
-        
-        return elements[index];
+        return elements?.size() <= index ? null : elements[index];
     }
 }
