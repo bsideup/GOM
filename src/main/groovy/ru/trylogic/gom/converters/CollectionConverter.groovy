@@ -25,13 +25,14 @@ class CollectionConverter extends AbstractConverter {
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         ClassNode resultVariableType;
         switch(targetFieldType) {
-            case ClassHelper.LIST_TYPE:
-            case ClassHelper.makeWithoutCaching(Iterable, false):
-            case ClassHelper.makeWithoutCaching(Collection, false):
-                resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
-                break;
             case ClassHelper.makeWithoutCaching(Set, false):
                 resultVariableType = ClassHelper.makeWithoutCaching(HashSet, false);
+                break;
+            case ClassHelper.makeWithoutCaching(Deque, false):
+                resultVariableType = ClassHelper.makeWithoutCaching(ArrayDeque, false);
+                break;
+            case {ClassNode it -> it.isInterface()}:
+                resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
                 break;
             default:
                 resultVariableType = targetFieldType.getPlainNodeReference();
