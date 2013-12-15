@@ -17,22 +17,37 @@ import static groovyjarjarasm.asm.Opcodes.*;
 class MapConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        return isMap(targetFieldType) && isMap(sourceFieldType);
+        
+        if(!isMap(sourceFieldType)) {
+            return false;
+        }
+        
+        if(targetFieldType.isInterface()) {
+            return getImplementationForInterface(targetFieldType) != null;
+        } else {
+            return isMap(targetFieldType)
+        }
+    }
+
+    ClassNode getImplementationForInterface(ClassNode interfaceNode) {
+        switch(interfaceNode) {
+            case ClassHelper.MAP_TYPE:
+                return ClassHelper.makeWithoutCaching(HashMap, false);
+            default:
+                return null;
+        }
     }
 
     @Override
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
-        ClassNode resultVariableType;
-        switch(targetFieldType) {
-            case ClassHelper.MAP_TYPE:
-                resultVariableType = ClassHelper.makeWithoutCaching(HashMap, false);
-                break;
-            default:
-                resultVariableType = targetFieldType.getPlainNodeReference();
-        }
+        ClassNode resultVariableType = targetFieldType;
+        
+        if(resultVariableType.isInterface()) {
+            resultVariableType = getImplementationForInterface(resultVariableType);
 
-        resultVariableType.usingGenerics = targetFieldType.usingGenerics;
-        resultVariableType.genericsTypes = targetFieldType.genericsTypes
+            resultVariableType.usingGenerics = targetFieldType.usingGenerics;
+            resultVariableType.genericsTypes = targetFieldType.genericsTypes;
+        }
 
         def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Map, false));
         def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Map, false));

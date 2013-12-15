@@ -18,28 +18,46 @@ class CollectionConverter extends AbstractConverter {
 
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        return isIterable(targetFieldType) && isIterable(sourceFieldType);
+        
+        if(!isIterable(sourceFieldType)) {
+            return false;
+        }
+        
+        if(targetFieldType.isInterface()) {
+            return getImplementationForInterface(targetFieldType) != null
+        } else {
+            return isIterable(targetFieldType);
+        }
+    }
+    
+    ClassNode getImplementationForInterface(ClassNode interfaceNode) {
+        switch(interfaceNode) {
+            // Set
+            case ClassHelper.makeWithoutCaching(Set, false):
+                return ClassHelper.makeWithoutCaching(HashSet, false);
+            // Deque
+            case ClassHelper.makeWithoutCaching(Deque, false):
+                return ClassHelper.makeWithoutCaching(ArrayDeque, false);
+            // Another collection
+            case ClassHelper.LIST_TYPE:
+            case ClassHelper.makeWithoutCaching(Collection, false):
+            case ClassHelper.makeWithoutCaching(Iterable, false):
+                return ClassHelper.makeWithoutCaching(ArrayList, false);
+            default:
+                return null;
+        }
     }
 
     @Override
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
-        ClassNode resultVariableType;
-        switch(targetFieldType) {
-            case ClassHelper.makeWithoutCaching(Set, false):
-                resultVariableType = ClassHelper.makeWithoutCaching(HashSet, false);
-                break;
-            case ClassHelper.makeWithoutCaching(Deque, false):
-                resultVariableType = ClassHelper.makeWithoutCaching(ArrayDeque, false);
-                break;
-            case {ClassNode it -> it.isInterface()}:
-                resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
-                break;
-            default:
-                resultVariableType = targetFieldType.getPlainNodeReference();
-        }
+        ClassNode resultVariableType = targetFieldType;
 
-        resultVariableType.usingGenerics = targetFieldType.usingGenerics;
-        resultVariableType.genericsTypes = targetFieldType.genericsTypes
+        if(targetFieldType.isInterface()) {
+            resultVariableType = getImplementationForInterface(targetFieldType);
+
+            resultVariableType.usingGenerics = targetFieldType.usingGenerics;
+            resultVariableType.genericsTypes = targetFieldType.genericsTypes;
+        }
 
         def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Iterable, false));
         def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Iterable, false));
