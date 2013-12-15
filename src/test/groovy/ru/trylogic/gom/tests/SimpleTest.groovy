@@ -14,6 +14,10 @@ import static ru.trylogic.gom.tests.TestConfigBuilder.*;
 class SimpleTest extends Specification {
 
     Transformer<Person, PersonDTO> mapper;
+    
+    def friendsCompareCLosure = { PersonDTO toElement, Person sourceElement ->
+        sourceElement.name == toElement.firstName + NAME_GLUE + toElement.secondName
+    }
 
     def setup() {
         def builder = new TestConfigBuilder();
@@ -39,33 +43,28 @@ class SimpleTest extends Specification {
 
     def "test to a"(){
 
-        def person = new PersonDTO(firstName, secondName, phone, age, sex, new AddressDTO(streetParts, zipCode), new FriendsList(friends), new AddressNotes(), favouriteAnimals)
+        def person = new PersonDTO(firstName, secondName, aPhone, age, sex, new AddressDTO(streetParts, zipCode), new FriendsList(friends), new AddressNotes(), favouriteAnimals)
         person.addressNotes.put(person.address, currentAddressNote);
         
         Person result = mapper.toA(person)
 
         expect:
-        result.phone == phone
+        result.phone == aPhone
         result.age == age.toString()
         result.sex == Sex.valueOf(Sex, sex.name())
         result.name == firstName + NAME_GLUE + secondName
         result.address?.zipCode == zipCode.toString()
         result.address?.street == streetParts.join(STREET_PARTS_GLUE)
-        
-        result.friends != null
-        result.friends.size() == friends.size()
-        friends.every { PersonDTO friend -> result.friends.any { it.name == friend.firstName + NAME_GLUE + friend.secondName } }
+
+        compare(result.friends, friends, friendsCompareCLosure)
         
         result.addressNotes.keySet().first() == result.address
-        
         result.addressNotes.get(result.address) == currentAddressNote
 
-        result.favouriteAnimals != null
-        result.favouriteAnimals.size() == favouriteAnimals.size()
-        favouriteAnimals.every { String animal -> result.favouriteAnimals.any { it == animal } }
+        compare(result.favouriteAnimals, favouriteAnimals)
 
         where:
-        firstName | secondName | age | sex           | phone | streetParts               | zipCode | friends                            | currentAddressNote | favouriteAnimals
+        firstName | secondName | age | sex           | aPhone | streetParts               | zipCode | friends                            | currentAddressNote | favouriteAnimals
         "John"    | "Smith"    | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(firstName: "Jack")] | "Great flat!"      | ["cat", "panda"]
     }
 
@@ -86,21 +85,36 @@ class SimpleTest extends Specification {
         result.address?.zipCode == zipCode.toInteger()
         result.address?.streetParts == street.split(STREET_PARTS_GLUE)
         
-        result.friends != null
-        result.friends.size() == 1
-        result.friends.any {(it.firstName + NAME_GLUE + it.secondName) == friends[0].name}
+        compare(result.friends, friends, { Person toElement, PersonDTO sourceElement -> friendsCompareCLosure(sourceElement, toElement) })
 
         result.addressNotes.keySet().first() == result.address
-
         result.addressNotes.get(result.address) == currentAddressNote
 
-        result.favouriteAnimals != null
-        result.favouriteAnimals.size() == 2
-        result.favouriteAnimals.any {it == favouriteAnimals[0]}
-        result.favouriteAnimals.any {it == favouriteAnimals[1]}
+        compare(result.favouriteAnimals, favouriteAnimals)
 
         where:
         name         | age  | sex      | phone | street             | zipCode     | friends                          | currentAddressNote | favouriteAnimals
         "John Smith" | "18" | Sex.MALE | "911" | "Katusepapi 23/25" | "100500"    | [new Person(name: "Jack Jones")] | "Great flat!"      | new HashSet<String>(["cat", "panda"])
+    }
+
+
+    private <FIRST_TYPE, SECOND_TYPE> boolean compare(Collection<FIRST_TYPE> source, Collection<SECOND_TYPE> to, Closure converter = null) {
+        if(to == null) {
+            return source == null;
+        }
+
+        if(to.size() != source.size()) {
+            return false;
+        }
+
+        if(converter == null) {
+            converter = {SECOND_TYPE toElement, FIRST_TYPE sourceElement -> toElement == sourceElement}
+        }
+
+        return to.every {SECOND_TYPE toElement ->
+            source.any { FIRST_TYPE sourceElement ->
+                converter(toElement, sourceElement)
+            }
+        }
     }
 }
