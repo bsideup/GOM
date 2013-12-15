@@ -98,14 +98,11 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
 
         def sourceParameter = new Parameter(sourceClassNode, '$source')
         
-        methodBody.statements << new IfStatement(
-                equalsNullExpr(new VariableExpression(sourceParameter)),
-                new BlockStatement(
-                        [new ReturnStatement(new ConstantExpression(null))] as List<Statement>,
-                        new VariableScope()
-                ),
-                new EmptyStatement()
-        );
+        methodBody.statements << (Statement) macro {
+            if($v{new VariableExpression(sourceParameter)} == null) {
+                return null;
+            }
+        }
         
         def targetVariable = new VariableExpression('$result', targetClassNode)
         methodBody.statements << declStatement(targetVariable, new ConstructorCallExpression(targetClassNode, EMPTY_ARGUMENTS));
