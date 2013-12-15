@@ -25,6 +25,15 @@ class PersonDTO {
         }
     }
     
+    static class AddressNotes extends HashMap<AddressDTO, String> {
+        AddressNotes(Map<? extends AddressDTO, ? extends String> map) {
+            super(map)
+        }
+
+        AddressNotes() {
+        }
+    }
+
     String firstName;
     
     String secondName;
@@ -39,7 +48,7 @@ class PersonDTO {
 
     FriendsList friends;
 
-    Map<AddressDTO, String> addressNotes;
+    AddressNotes addressNotes;
 
     Set<String> favouriteAnimals;
 }

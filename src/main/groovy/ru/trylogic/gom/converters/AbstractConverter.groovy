@@ -38,7 +38,7 @@ abstract class AbstractConverter implements Converter {
     }
 
     boolean isMap(ClassNode classNode) {
-        return classNode == ClassHelper.MAP_TYPE;
+        return isOrImplements(classNode, ClassHelper.MAP_TYPE);
     }
 
     TernaryExpression nullSafe(Expression sourceFieldValue, Expression value) {

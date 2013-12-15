@@ -3,6 +3,7 @@ package ru.trylogic.gom.converters
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.tools.GenericsUtils
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -14,15 +15,7 @@ import static groovyjarjarasm.asm.Opcodes.*;
 class MapConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        if(!(isMap(targetFieldType) || isMap(sourceFieldType))) {
-            return false;
-        }
-
-        if(sourceFieldType.genericsTypes?.size() != 2) {
-            return false;
-        }
-
-        return true;
+        return isMap(targetFieldType) && isMap(sourceFieldType);
     }
 
     @Override
@@ -36,8 +29,11 @@ class MapConverter extends AbstractConverter {
                 resultVariableType = targetFieldType.getPlainNodeReference();
         }
 
-        resultVariableType.usingGenerics = true;
+        resultVariableType.usingGenerics = targetFieldType.usingGenerics;
         resultVariableType.genericsTypes = targetFieldType.genericsTypes
+
+        def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Map, false));
+        def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Map, false));
 
         def resultVariable = new VariableExpression('$result', resultVariableType)
 
@@ -48,7 +44,7 @@ class MapConverter extends AbstractConverter {
 
         def entryType = ClassHelper.makeWithoutCaching(Map.Entry, false);
         entryType.usingGenerics = true;
-        entryType.genericsTypes = sourceParameter.type.genericsTypes;
+        entryType.genericsTypes = parameterizeSourceFieldType.genericsTypes;
         
         def iParameter = new Parameter(entryType, '$entry');
         
@@ -59,8 +55,8 @@ class MapConverter extends AbstractConverter {
                 iParameter,
                 new MethodCallExpression(new VariableExpression(sourceParameter), "entrySet", EMPTY_ARGUMENTS),
                 new ExpressionStatement(new MethodCallExpression(resultVariable, "put", new ArgumentListExpression(
-                        mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[0].type, keyExpression),
-                        mapperProcessor.generateFieldValue(mapperClassNode, resultVariable.originType.genericsTypes[1].type, valueExpression)
+                        mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, keyExpression),
+                        mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[1].type, valueExpression)
                 )))
         );
         methodCode.statements << new ReturnStatement(resultVariable);
