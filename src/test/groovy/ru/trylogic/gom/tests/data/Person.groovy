@@ -30,6 +30,6 @@ class Person {
     
     Map<Address, String> addressNotes;
     
-    Set<String> favouriteAnimals;
+    HashSet<String> favouriteAnimals;
 }
 
