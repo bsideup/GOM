@@ -32,9 +32,13 @@ abstract class AbstractConverter implements Converter {
     boolean isSet(ClassNode classNode) {
         return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Set, false));
     }
-    
+
     boolean isCollection(ClassNode classNode) {
         return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Collection, false));
+    }
+
+    boolean isIterable(ClassNode classNode) {
+        return isOrImplements(classNode, ClassHelper.makeWithoutCaching(Iterable, false));
     }
 
     boolean isMap(ClassNode classNode) {

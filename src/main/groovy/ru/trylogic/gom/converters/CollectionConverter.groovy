@@ -4,7 +4,6 @@ import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.ast.tools.GenericsUtils
-import org.codehaus.groovy.ast.tools.WideningCategories
 
 import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
 
@@ -17,7 +16,7 @@ class CollectionConverter extends AbstractConverter {
 
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        return isCollection(targetFieldType) && isCollection(sourceFieldType);
+        return isIterable(targetFieldType) && isIterable(sourceFieldType);
     }
 
     @Override
@@ -25,6 +24,8 @@ class CollectionConverter extends AbstractConverter {
         ClassNode resultVariableType;
         switch(targetFieldType) {
             case ClassHelper.LIST_TYPE:
+            case ClassHelper.makeWithoutCaching(Iterable, false):
+            case ClassHelper.makeWithoutCaching(Collection, false):
                 resultVariableType = ClassHelper.makeWithoutCaching(ArrayList, false);
                 break;
             case ClassHelper.makeWithoutCaching(Set, false):
@@ -37,8 +38,8 @@ class CollectionConverter extends AbstractConverter {
         resultVariableType.usingGenerics = targetFieldType.usingGenerics;
         resultVariableType.genericsTypes = targetFieldType.genericsTypes
 
-        def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Collection, false));
-        def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Collection, false));
+        def parameterizeSourceFieldType = GenericsUtils.parameterizeType(sourceFieldValue.type, ClassHelper.makeWithoutCaching(Iterable, false));
+        def parameterizeTargetFieldType = GenericsUtils.parameterizeType(resultVariableType, ClassHelper.makeWithoutCaching(Iterable, false));
 
         def resultVariable = new VariableExpression('$result', resultVariableType)
         

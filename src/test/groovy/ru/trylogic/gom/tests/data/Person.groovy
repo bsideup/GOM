@@ -26,7 +26,7 @@ class Person {
     
     Address address;
     
-    List<Person> friends;
+    Collection<Person> friends;
     
     Map<Address, String> addressNotes;
     
