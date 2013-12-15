@@ -18,8 +18,8 @@ import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 @CompileStatic
 class KnownMappingConverter extends AbstractConverter {
     @Override
-    boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        return config.mappings.any { GOMConfig.Mapping it -> it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldType.name)}
+    boolean match(ClassNode targetFieldType, Expression sourceFieldValue) {
+        return config.mappings.any { GOMConfig.Mapping it -> it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldValue.type.name)}
     }
 
     @Override

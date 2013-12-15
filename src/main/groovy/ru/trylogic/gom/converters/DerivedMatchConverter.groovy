@@ -8,13 +8,13 @@ import org.codehaus.groovy.ast.expr.Expression
 @CompileStatic
 class DerivedMatchConverter extends AbstractConverter {
     @Override
-    boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        if(!targetFieldType.isDerivedFrom(sourceFieldType)) {
+    boolean match(ClassNode targetFieldType, Expression sourceFieldValue) {
+        if(!targetFieldType.isDerivedFrom(sourceFieldValue.type)) {
             return false;
         }
 
         def targetFieldGenericTypes = targetFieldType.genericsTypes
-        def sourceFieldGenericTypes = sourceFieldType.genericsTypes
+        def sourceFieldGenericTypes = sourceFieldValue.type.genericsTypes
         
         boolean genericTypesMatch = true;
 

@@ -11,7 +11,7 @@ interface Converter {
     
     void init(CompilationUnit compilationUnit, GOMConfig config, MapperProcessor mapperProcessor);
     
-    boolean match(ClassNode targetFieldType, ClassNode sourceFieldType);
+    boolean match(ClassNode targetFieldType, Expression sourceFieldValue);
 
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue);
 }

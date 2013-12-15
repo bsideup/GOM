@@ -11,13 +11,13 @@ import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 @CompileStatic
 class EnumConverter extends AbstractConverter {
     @Override
-    boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
+    boolean match(ClassNode targetFieldType, Expression sourceFieldValue) {
         if(!targetFieldType.isEnum()) {
             return false;
         }
 
-        switch(sourceFieldType) {
-            case {sourceFieldType.enum}:
+        switch(sourceFieldValue.type) {
+            case {sourceFieldValue.type.enum}:
             case ClassHelper.STRING_TYPE:
                 return true;
             default:

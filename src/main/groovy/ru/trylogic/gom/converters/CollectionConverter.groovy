@@ -17,9 +17,9 @@ import static groovyjarjarasm.asm.Opcodes.*;
 class CollectionConverter extends AbstractConverter {
 
     @Override
-    boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
+    boolean match(ClassNode targetFieldType, Expression sourceFieldValue) {
         
-        if(!isIterable(sourceFieldType)) {
+        if(!isIterable(sourceFieldValue.type)) {
             return false;
         }
         

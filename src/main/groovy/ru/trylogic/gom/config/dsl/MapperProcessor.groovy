@@ -157,6 +157,6 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     
     Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         //TODO warn about no mapping
-        return converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue.type)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
+        return converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
     }
 }

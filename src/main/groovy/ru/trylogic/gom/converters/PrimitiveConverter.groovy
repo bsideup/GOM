@@ -13,7 +13,7 @@ import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 @CompileStatic
 class PrimitiveConverter extends AbstractConverter {
     @Override
-    boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
+    boolean match(ClassNode targetFieldType, Expression sourceFieldValue) {
         return ClassHelper.isPrimitiveType(ClassHelper.getUnwrapper(targetFieldType))
     }
 
