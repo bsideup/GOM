@@ -22,6 +22,20 @@ class SimpleTest extends Specification {
         
         mapper = gom.getTransformer(Person, PersonDTO)
     }
+    
+    def "test double conversion"() {
+
+        def person = new PersonDTO(firstName, secondName, phone, age, sex, new AddressDTO(streetParts, zipCode), new FriendsList(friends), new AddressNotes(), favouriteAnimals)
+        
+        def result = mapper.toB(mapper.toA(person))
+
+        expect:
+        person.hashCode() == result.hashCode()
+
+        where:
+        firstName | secondName | age | sex           | phone | streetParts               | zipCode | friends                            | currentAddressNote | favouriteAnimals
+        "John"    | "Smith"    | 18  | SexDTO.MALE   | "911" | ["Katusepapi", "23/25"]   | 100500  | [new PersonDTO(firstName: "Jack")] | "Great flat!"      | ["cat", "panda"]
+    }
 
     def "test to a"(){
 
@@ -39,17 +53,16 @@ class SimpleTest extends Specification {
         result.address?.street == streetParts.join(STREET_PARTS_GLUE)
         
         result.friends != null
-        result.friends.size() == 1
-        result.friends.any {it.name == friends[0].firstName + NAME_GLUE + friends[0].secondName}
+        result.friends.size() == friends.size()
+        friends.every { PersonDTO friend -> result.friends.any { it.name == friend.firstName + NAME_GLUE + friend.secondName } }
         
         result.addressNotes.keySet().first() == result.address
         
         result.addressNotes.get(result.address) == currentAddressNote
 
         result.favouriteAnimals != null
-        result.favouriteAnimals.size() == 2
-        result.favouriteAnimals.any {it == favouriteAnimals[0]}
-        result.favouriteAnimals.any {it == favouriteAnimals[1]}
+        result.favouriteAnimals.size() == favouriteAnimals.size()
+        favouriteAnimals.every { String animal -> result.favouriteAnimals.any { it == animal } }
 
         where:
         firstName | secondName | age | sex           | phone | streetParts               | zipCode | friends                            | currentAddressNote | favouriteAnimals
