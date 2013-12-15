@@ -1,14 +1,8 @@
 package ru.trylogic.gom.converters
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.InnerClassNode
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
-import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
 
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 
@@ -18,7 +12,17 @@ import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
 class EnumConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, ClassNode sourceFieldType) {
-        return targetFieldType.isEnum();
+        if(!targetFieldType.isEnum()) {
+            return false;
+        }
+
+        switch(sourceFieldType) {
+            case {sourceFieldType.enum}:
+            case ClassHelper.STRING_TYPE:
+                return true;
+            default:
+                return false;
+        }
     }
 
     @Override
