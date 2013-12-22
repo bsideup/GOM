@@ -26,6 +26,16 @@ abstract class AbstractConverter implements Converter {
         this.config = config;
         this.mapperProcessor = mapperProcessor;
     }
+    
+    String generateMethodName(ClassNode classNode) {
+        while(true) {
+            def randomName = "converter" + System.currentTimeMillis();
+
+            if(classNode.getMethods(randomName).empty) {
+                return randomName;
+            }
+        }
+    }
 
     boolean isList(ClassNode classNode) {
         return isOrImplements(classNode, ClassHelper.LIST_TYPE);

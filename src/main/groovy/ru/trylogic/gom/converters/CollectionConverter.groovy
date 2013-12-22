@@ -5,8 +5,7 @@ import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.ast.tools.GenericsUtils
-
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
+import ru.trylogic.gom.config.GOMConfig
 
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
@@ -49,7 +48,7 @@ class CollectionConverter extends AbstractConverter {
     }
 
     @Override
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue, GOMConfig.Direction direction) {
         ClassNode resultVariableType = targetFieldType;
 
         if(targetFieldType.isInterface()) {
@@ -64,10 +63,10 @@ class CollectionConverter extends AbstractConverter {
 
         Parameter sourceParameter = new Parameter(sourceFieldValue.type, '$source')
 
-        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariableType, [sourceParameter] as Parameter[], null, (Statement) macro {
+        def method = mapperClassNode.addMethod(generateMethodName(mapperClassNode), ACC_PUBLIC, resultVariableType, [sourceParameter] as Parameter[], null, (Statement) macro {
             def $result = $v{new ConstructorCallExpression(resultVariableType, EMPTY_ARGUMENTS)};
             for($item in $v{new VariableExpression(sourceParameter)}) {
-                $result.add($v{mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, new VariableExpression('$item', parameterizeSourceFieldType.genericsTypes[0].type))})
+                $result.add($v{mapperProcessor.generateFieldValue(direction, mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, new VariableExpression('$item', parameterizeSourceFieldType.genericsTypes[0].type))})
             }
 
             return $result

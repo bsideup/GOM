@@ -6,6 +6,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.Expression
+import ru.trylogic.gom.config.GOMConfig
 
 @CompileStatic
 class PrimitiveConverter extends AbstractConverter {
@@ -15,7 +16,7 @@ class PrimitiveConverter extends AbstractConverter {
     }
 
     @Override
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue, GOMConfig.Direction direction) {
         return nullSafe(sourceFieldValue, (Expression) macro {
             $v{new ClassExpression(ClassHelper.getWrapper(targetFieldType))}.valueOf($v{sourceFieldValue})
         })

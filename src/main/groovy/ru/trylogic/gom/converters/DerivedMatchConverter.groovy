@@ -4,6 +4,7 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.expr.Expression
+import ru.trylogic.gom.config.GOMConfig
 
 @CompileStatic
 class DerivedMatchConverter extends AbstractConverter {
@@ -26,7 +27,7 @@ class DerivedMatchConverter extends AbstractConverter {
     }
 
     @Override
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue, GOMConfig.Direction direction) {
         return sourceFieldValue
     }
 }

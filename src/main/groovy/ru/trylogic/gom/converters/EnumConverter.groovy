@@ -3,10 +3,9 @@ package ru.trylogic.gom.converters
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
+import ru.trylogic.gom.config.GOMConfig
 
-import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
-
-import static ru.trylogic.gom.config.dsl.MapperProcessor.*;
+import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS
 
 @CompileStatic
 class EnumConverter extends AbstractConverter {
@@ -26,7 +25,7 @@ class EnumConverter extends AbstractConverter {
     }
 
     @Override
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue, GOMConfig.Direction direction) {
         Expression enumKey = null;
         switch(sourceFieldValue.type) {
             case {ClassNode it -> it.enum}:

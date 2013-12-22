@@ -13,5 +13,5 @@ interface Converter {
     
     boolean match(ClassNode targetFieldType, Expression sourceFieldValue);
 
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue);
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue, GOMConfig.Direction direction);
 }

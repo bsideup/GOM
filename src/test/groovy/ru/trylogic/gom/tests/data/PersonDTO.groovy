@@ -55,7 +55,7 @@ class PersonDTO {
     
     AddressDTO address;
 
-    FriendsList friends;
+    //FriendsList friends;
 
     AddressNotes addressNotes;
 

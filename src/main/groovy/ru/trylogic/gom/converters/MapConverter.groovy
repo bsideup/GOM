@@ -5,8 +5,7 @@ import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
 import org.codehaus.groovy.ast.tools.GenericsUtils
-
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
+import ru.trylogic.gom.config.GOMConfig
 
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
@@ -39,7 +38,7 @@ class MapConverter extends AbstractConverter {
     }
 
     @Override
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue, GOMConfig.Direction direction) {
         ClassNode resultVariableType = targetFieldType;
         
         if(resultVariableType.isInterface()) {
@@ -55,13 +54,13 @@ class MapConverter extends AbstractConverter {
         def keyExpression = (Expression) macro {$entry.key}
         keyExpression.type = parameterizeSourceFieldType.genericsTypes.first().type;
 
-        def method = mapperClassNode.addMethod("converter" + System.currentTimeMillis(), ACC_PUBLIC, resultVariableType, [new Parameter(sourceFieldValue.type, '$source')] as Parameter[], null, (Statement) macro {
+        def method = mapperClassNode.addMethod(generateMethodName(mapperClassNode), ACC_PUBLIC, resultVariableType, [new Parameter(sourceFieldValue.type, '$source')] as Parameter[], null, (Statement) macro {
             def $result = $v{new ConstructorCallExpression(resultVariableType, EMPTY_ARGUMENTS)};
 
             for($entry in $source.entrySet()) {
                 $result.put(
-                        $v{mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, keyExpression)},
-                        $v{mapperProcessor.generateFieldValue(mapperClassNode, parameterizeTargetFieldType.genericsTypes[1].type, (Expression) macro {$entry.value})}
+                        $v{mapperProcessor.generateFieldValue(direction, mapperClassNode, parameterizeTargetFieldType.genericsTypes[0].type, keyExpression)},
+                        $v{mapperProcessor.generateFieldValue(direction, mapperClassNode, parameterizeTargetFieldType.genericsTypes[1].type, (Expression) macro {$entry.value})}
                 )
             }
             return $result;

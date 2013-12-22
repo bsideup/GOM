@@ -73,9 +73,11 @@ abstract class DSLConfigBuilderBase extends DSLBuilder<GOMConfig> implements Con
         def mapping = new GOMMappingBuilder(a, b, spec).build()
         result.mappings << mapping;
 
+        /*
         result.mappings << new GOMConfig.Mapping(mapping.b, mapping.a, mapping.toB, mapping.toA, mapping.fields.collect {
             new GOMConfig.Field(it.bName, it.aName, it.b, it.a)
         }.toSet(), true)
+        */
     }
 
     def mapping(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = GOMMappingBuilder) Closure spec) {

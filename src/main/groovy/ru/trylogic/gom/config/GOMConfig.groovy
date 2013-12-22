@@ -103,13 +103,14 @@ class GOMConfig {
     Set<Mapping> mappings;
 
     List<Class<? extends Converter>> converters = [
-            KnownMappingConverter,
+            //KnownMappingConverter,
             DerivedMatchConverter,
             MapConverter,
             CollectionConverter,
             EnumConverter,
             PrimitiveConverter,
-            StringConverter
+            StringConverter,
+            AnyObjectConverter
     ] as List<Class<? extends Converter>>;
 
     GOMConfig() {

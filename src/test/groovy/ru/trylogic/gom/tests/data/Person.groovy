@@ -29,7 +29,7 @@ class Person {
     
     Address address;
     
-    Collection<Person> friends;
+    //Collection<Person> friends;
     
     Map<Address, String> addressNotes;
     

@@ -12,13 +12,8 @@ import ru.trylogic.gom.Transformer
 import ru.trylogic.gom.config.GOMConfig
 import ru.trylogic.gom.config.GOMConfig.Direction
 import ru.trylogic.gom.config.GOMConfig.Mapping
-import ru.trylogic.gom.config.GOMConfig.Field
 import ru.trylogic.gom.converters.Converter
 
-import static org.codehaus.groovy.transform.AbstractASTTransformUtil.*;
-
-import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
-import static org.codehaus.groovy.ast.expr.VariableExpression.THIS_EXPRESSION;
 import static org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY;
 
 @CompileStatic
@@ -91,72 +86,16 @@ class MapperProcessor implements CompilationUnitAware, Opcodes {
     }
 
     MethodNode generateToMethod(Direction direction, InnerClassNode mapperClassNode, Mapping mapping, ClassNode targetClassNode, ClassNode sourceClassNode) {
-        def toMethodCode = direction.toMethodCode(mapping)
-        if(toMethodCode != null) {
-            def closure = new ClosureCompiler(compilationUnit).compile(toMethodCode);
-
-            return new MethodNode(direction.toMethodName, ACC_PUBLIC, targetClassNode, [new Parameter(sourceClassNode, mapping.inverted ? direction.parameterName : direction.opositeParameterName)] as Parameter[], null, closure.code);
-        }
-
-        def methodBody = new BlockStatement();
 
         def sourceParameter = new Parameter(sourceClassNode, '$source')
-        
-        methodBody.statements << (Statement) macro {
-            if($v{new VariableExpression(sourceParameter)} == null) {
-                return null;
-            }
-        }
-        
-        def targetVariable = new VariableExpression('$result', targetClassNode)
-        methodBody.statements << declStatement(targetVariable, new ConstructorCallExpression(targetClassNode, EMPTY_ARGUMENTS));
 
-        targetClassNode.fields.each { FieldNode targetField ->
-            if((targetField.modifiers & ACC_SYNTHETIC) ) {
-                return;
-            }
-
-            Expression value = generateFieldAssign(direction, mapping, mapperClassNode, targetClassNode, sourceClassNode, targetField, sourceParameter);
-
-            if(value == null) {
-                return;
-            }
-
-            def propertyExpression = new PropertyExpression(targetVariable, targetField.name)
-            methodBody.statements << assignStatement(propertyExpression, value);
-        }
-
-        methodBody.statements << new ReturnStatement(targetVariable)
-
-        return new MethodNode(direction.toMethodName, ACC_PUBLIC, targetClassNode, [sourceParameter] as Parameter[], null, methodBody)
+        def value = generateFieldValue(direction, mapperClassNode, targetClassNode, new VariableExpression(sourceParameter))
+        def toMethodStatement = new ExpressionStatement(value);
+        return new MethodNode(direction.toMethodName, ACC_PUBLIC, targetClassNode, [sourceParameter] as Parameter[], null, toMethodStatement)
     }
     
-    Expression generateFieldAssign(Direction direction, Mapping mapping, InnerClassNode mapperClassNode, ClassNode targetClassNode, ClassNode sourceClassNode, FieldNode targetField, Parameter sourceParameter) {
-        Field fieldConfig = mapping.fields?.find { Field it -> direction.getSourceFieldName(it) == targetField.name }
-        String sourceFieldConverterCode = direction.getFieldConverterCode(fieldConfig);
-        if(sourceFieldConverterCode != null) {
-            def closure = new ClosureCompiler(compilationUnit).compile(sourceFieldConverterCode);
-
-            def methodName = direction.getFieldConverterName(fieldConfig)
-            mapperClassNode.addMethod(methodName, ACC_PUBLIC, targetField.type, [new Parameter(sourceClassNode, mapping.inverted ? direction.parameterName : direction.opositeParameterName)] as Parameter[], null, closure.code);
-
-            return new MethodCallExpression(THIS_EXPRESSION, methodName, new ArgumentListExpression(sourceParameter));
-        }
-
-        FieldNode sourceField = sourceClassNode.getField(direction.getTargetFieldName(fieldConfig) ?: targetField.name);
-        
-        if(sourceField == null) {
-            return null;
-        }
-        
-        def sourceFieldValue = new PropertyExpression(new VariableExpression(sourceParameter), sourceField.name)
-        sourceFieldValue.type = sourceClassNode.getField(sourceField.name).type
-        
-        return generateFieldValue(mapperClassNode, targetField.type, sourceFieldValue)
-    }
-    
-    Expression generateFieldValue(InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
+    Expression generateFieldValue(Direction direction, InnerClassNode mapperClassNode, ClassNode targetFieldType, Expression sourceFieldValue) {
         //TODO warn about no mapping
-        return converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue);
+        return converters.find {Converter it -> it.match(targetFieldType, sourceFieldValue)}?.generateFieldValue(mapperClassNode, targetFieldType, sourceFieldValue, direction);
     }
 }

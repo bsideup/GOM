@@ -29,7 +29,7 @@ class SimpleTest extends Specification {
     
     def "test double conversion"() {
 
-        def person = new PersonDTO(firstName, secondName, phone, age, sex, new AddressDTO(streetParts, zipCode), new FriendsList(friends), new AddressNotes(), favouriteAnimals)
+        def person = new PersonDTO(firstName, secondName, phone, age, sex, new AddressDTO(streetParts, zipCode), /*new FriendsList(friends),*/ new AddressNotes(), favouriteAnimals)
         
         def result = mapper.toB(mapper.toA(person))
 
@@ -43,7 +43,7 @@ class SimpleTest extends Specification {
 
     def "test to a"(){
 
-        def person = new PersonDTO(firstName, secondName, aPhone, age, sex, new AddressDTO(streetParts, zipCode), new FriendsList(friends), new AddressNotes(), favouriteAnimals)
+        def person = new PersonDTO(firstName, secondName, aPhone, age, sex, new AddressDTO(streetParts, zipCode), /*new FriendsList(friends),*/ new AddressNotes(), favouriteAnimals)
         person.addressNotes.put(person.address, currentAddressNote);
         
         Person result = mapper.toA(person)
@@ -56,7 +56,7 @@ class SimpleTest extends Specification {
         result.address?.zipCode == zipCode.toString()
         result.address?.street == streetParts.join(STREET_PARTS_GLUE)
 
-        compare(result.friends, friends, friendsCompareCLosure)
+        //compare(result.friends, friends, friendsCompareCLosure)
         
         result.addressNotes.keySet().first() == result.address
         compare(result.addressNotes.values(), [currentAddressNote])
@@ -70,7 +70,7 @@ class SimpleTest extends Specification {
 
     def "test to b"(){
 
-        def person = new Person(name, phone, age, sex, new Address(zipCode, street), friends, [:], favouriteAnimals)
+        def person = new Person(name, phone, age, sex, new Address(zipCode, street), /*friends,*/ [:], favouriteAnimals)
 
         person.addressNotes.put(person.address, currentAddressNote);
         
@@ -85,7 +85,7 @@ class SimpleTest extends Specification {
         result.address?.zipCode == zipCode.toInteger()
         result.address?.streetParts == street.split(STREET_PARTS_GLUE)
         
-        compare(result.friends, friends, { Person toElement, PersonDTO sourceElement -> friendsCompareCLosure(sourceElement, toElement) })
+        //compare(result.friends, friends, { Person toElement, PersonDTO sourceElement -> friendsCompareCLosure(sourceElement, toElement) })
 
         result.addressNotes.keySet().first() == result.address
         compare(result.addressNotes.values(), [currentAddressNote])

@@ -20,7 +20,7 @@ class ClosureCompiler implements CompilationUnitAware {
     }
 
     ClosureExpression compile(String script) {
-        def scriptClassName = "script" + System.currentTimeMillis()
+        def scriptClassName = "script" + System.nanoTime()
         def classLoader = new GroovyClassLoader(compilationUnit.classLoader, compilationUnit.configuration);
 
         CompilationUnit unit = new CompilationUnit(compilationUnit.configuration, null, classLoader);
