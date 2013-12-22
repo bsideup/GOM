@@ -9,9 +9,4 @@ interface Transformer<A_TYPE, B_TYPE> {
     A_TYPE toA(B_TYPE b);
 
     B_TYPE toB(A_TYPE a);
-    
-    
-    GOM getGom();
-    
-    void setGom(GOM value);
 }

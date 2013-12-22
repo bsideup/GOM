@@ -11,8 +11,11 @@ import ru.trylogic.gom.config.GOMConfig
 class KnownMappingConverter extends AbstractConverter {
     @Override
     boolean match(ClassNode targetFieldType, Expression sourceFieldValue) {
-        
-        return config.mappings.any { GOMConfig.Mapping it ->
+        return getMapping(targetFieldType, sourceFieldValue) != null;
+    }
+    
+    GOMConfig.Mapping getMapping(ClassNode targetFieldType, Expression sourceFieldValue) {
+        return config.mappings.find { GOMConfig.Mapping it ->
             it.a.name.equalsIgnoreCase(targetFieldType.name) && it.b.name.equalsIgnoreCase(sourceFieldValue.type.name)
         }
     }

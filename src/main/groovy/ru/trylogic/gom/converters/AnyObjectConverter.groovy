@@ -70,7 +70,7 @@ class AnyObjectConverter extends AbstractConverter {
                 return;
             }
 
-            Expression value = generateFieldAssign(mapping, direction, mapperClassNode, targetFieldType, sourceFieldType, targetField, sourceParameter);
+            Expression value = generateFieldAssign(mapping, direction, mapperClassNode, sourceFieldType, targetField, sourceParameter);
 
             if(value == null) {
                 return;
@@ -85,7 +85,7 @@ class AnyObjectConverter extends AbstractConverter {
         return methodBody;
     }
 
-    Expression generateFieldAssign(GOMConfig.Mapping mapping, GOMConfig.Direction direction, InnerClassNode mapperClassNode, ClassNode targetClassNode, ClassNode sourceClassNode, FieldNode targetField, Parameter sourceParameter) {
+    Expression generateFieldAssign(GOMConfig.Mapping mapping, GOMConfig.Direction direction, InnerClassNode mapperClassNode, ClassNode sourceClassNode, FieldNode targetField, Parameter sourceParameter) {
         GOMConfig.Field fieldConfig = mapping?.fields?.find { GOMConfig.Field it -> direction.getSourceFieldName(it) == targetField.name }
         String sourceFieldConverterCode;
         if(fieldConfig != null) {
@@ -100,9 +100,6 @@ class AnyObjectConverter extends AbstractConverter {
         FieldNode sourceField = sourceClassNode.getField(direction.getTargetFieldName(fieldConfig) ?: targetField.name);
 
         if(sourceField == null) {
-            println mapping
-            println fieldConfig
-            println targetField.name
             return null;
         }
 
