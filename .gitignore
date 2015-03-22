@@ -6,3 +6,8 @@
 *.iws
 
 target/
+
+
+.gradle
+
+build/
