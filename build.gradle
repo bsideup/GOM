@@ -1,0 +1,17 @@
+apply plugin: 'groovy'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.2.0'
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.2'
+    compile ('ru.trylogic.groovy.macro:macro-groovy:1.1.1') {
+        exclude module: 'org.codehaus.groovy'
+    }
+    
+    testCompile ('org.spockframework:spock-maven:0.7-groovy-2.0') {
+        exclude module: 'org.codehaus.groovy'
+    }
+}
